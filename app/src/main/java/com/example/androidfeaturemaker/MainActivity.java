@@ -521,7 +521,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 System.out.println("開始接收檔案");
                                 DataInputStream dataInput = new DataInputStream(socket.getInputStream());
                                 int datasize = dataInput.available();
-                                System.out.println("大小 : " + datasize);
+                                System.out.println("大小: " + datasize);
                                 //互換buffer----------------------------------------------------
                                 if(datasize > 0) { buffer = java.lang.Math.abs(buffer-1); }
                                 byte[][] data = new byte[2][];
