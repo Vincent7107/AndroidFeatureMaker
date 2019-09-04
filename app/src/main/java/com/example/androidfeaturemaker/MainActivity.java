@@ -96,9 +96,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     int playerList;
     //紀錄玩家資訊
     Point3 unityPosition;
-    int x = 0, y = 55, z = 0;
-    int viewX = 90, viewY = 0, viewZ = 0;
-    int moveX=0, moveY=0;
     int move = -1;
     String st;
     //test
@@ -240,7 +237,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
                 if (e1.getX() - e2.getX() > FLIP_DISTANCE) {
                     Log.i(Tag, "向左滑...");
-                    //moveX = -1;
                     move = 3;
                     Log.i(Tag, e1.getX() + " " + e1.getY());
                     Log.i(Tag, e2.getX() + " " + e2.getY());
@@ -248,7 +244,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 }
                 if (e2.getX() - e1.getX() > FLIP_DISTANCE) {
                     Log.i(Tag, "向右滑...");
-                    //moveX = 1;
                     move = 2;
                     Log.i(Tag, e1.getX() + " " + e1.getY());
                     Log.i(Tag, e2.getX() + " " + e2.getY());
@@ -256,7 +251,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 }
                 if (e1.getY() - e2.getY() > FLIP_DISTANCE) {
                     Log.i(Tag, "向上滑...");
-                    //moveY = 1;
                     move = 0;
                     Log.i(Tag, e1.getX() + " " + e1.getY());
                     Log.i(Tag, e2.getX() + " " + e2.getY());
@@ -264,7 +258,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 }
                 if (e2.getY() - e1.getY() > FLIP_DISTANCE) {
                     Log.i(Tag, "向下滑...");
-                    //moveY = -1;
                     move = 1;
                     Log.i(Tag, e1.getX() + " " + e1.getY());
                     Log.i(Tag, e2.getX() + " " + e2.getY());
@@ -294,28 +287,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 }
             }
         };*/
-        mThreadPool.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    // 創建socket IP port
-                    socket = new Socket("140.121.197.164", 80);
-                    // 判斷是否連接成功
-                    //System.out.println(socket.isConnected());
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                    }
-                    // record player's list
-                    InputStream in = socket.getInputStream();
-                    playerList = in.read();
-                    Log.i("playerlist", "playerlist : "+playerList);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
     }
 
     @Override
@@ -506,7 +477,40 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 利用线程池直接开启一个线程 & 执行该线程
+
+                mThreadPool.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            // 創建socket IP port
+                            socket = new Socket("140.121.197.164", 80);
+                            // 判斷是否連接成功
+                            //System.out.println(socket.isConnected());
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException ex) {
+                                Thread.currentThread().interrupt();
+                            }
+
+                            st = mRgba.cols() + " " + mRgba.rows();
+                            outputStream = socket.getOutputStream();
+                            outputStream.write((st).getBytes("utf-8"));
+                            outputStream.flush();
+
+                            // record player's list
+                            InputStream in = socket.getInputStream();
+                            playerList = in.read();
+                            Log.i("playerlist", "playerlist : "+playerList);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
                 mThreadPool.execute(new Runnable() {
                     @Override
                     public void run() {
@@ -522,8 +526,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 //發送
                                 outputStream.flush();
                                 //重置move
-                                moveX = 0;
-                                moveY = 0;
                                 move = -1;
 
                                 System.out.println("開始接收檔案");
