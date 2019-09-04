@@ -95,9 +95,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     //紀錄登入序號
     int playerList;
     //紀錄玩家資訊
+    Point3 unityPosition;
     int x = 0, y = 55, z = 0;
     int viewX = 90, viewY = 0, viewZ = 0;
     int moveX=0, moveY=0;
+    int move = -1;
     String st;
     //test
     private Button btnSend;
@@ -181,26 +183,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             }
         });
 
-        //相機內部參數
-        //cameraMatrix.put(0,0,608.33742247);
-        cameraMatrix.put(0,0,550.33742247);
-        cameraMatrix.put(0,1,0);
-        cameraMatrix.put(0,2,360.62381387);
-        cameraMatrix.put(1,0,0);
-        //cameraMatrix.put(1,1,607.41692009);
-        cameraMatrix.put(1,1,550.41692009);
-        cameraMatrix.put(1,2,240.04093524);
-        cameraMatrix.put(2,0,0);
-        cameraMatrix.put(2,1,0);
-        cameraMatrix.put(2,2,1);
-
-        //distCoeffs
-        distCoeffs.put(0,0,0.114998524);
-        distCoeffs.put(0,1,-0.0399730218);
-        distCoeffs.put(0,2,0.00108110572);
-        distCoeffs.put(0,3,-0.000319788278);
-        distCoeffs.put(0,4,-0.699416596);
-
         bmp = BitmapFactory.decodeResource(getResources(), R.drawable.p1);
         bmp32 = bmp.copy(Bitmap.Config.ARGB_8888, true);
         Utils.bitmapToMat(bmp32, oldmaker);
@@ -258,28 +240,32 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
                 if (e1.getX() - e2.getX() > FLIP_DISTANCE) {
                     Log.i(Tag, "向左滑...");
-                    moveX = -1;
+                    //moveX = -1;
+                    move = 3;
                     Log.i(Tag, e1.getX() + " " + e1.getY());
                     Log.i(Tag, e2.getX() + " " + e2.getY());
                     return true;
                 }
                 if (e2.getX() - e1.getX() > FLIP_DISTANCE) {
                     Log.i(Tag, "向右滑...");
-                    moveX = 1;
+                    //moveX = 1;
+                    move = 2;
                     Log.i(Tag, e1.getX() + " " + e1.getY());
                     Log.i(Tag, e2.getX() + " " + e2.getY());
                     return true;
                 }
                 if (e1.getY() - e2.getY() > FLIP_DISTANCE) {
                     Log.i(Tag, "向上滑...");
-                    moveY = 1;
+                    //moveY = 1;
+                    move = 0;
                     Log.i(Tag, e1.getX() + " " + e1.getY());
                     Log.i(Tag, e2.getX() + " " + e2.getY());
                     return true;
                 }
                 if (e2.getY() - e1.getY() > FLIP_DISTANCE) {
                     Log.i(Tag, "向下滑...");
-                    moveY = -1;
+                    //moveY = -1;
+                    move = 1;
                     Log.i(Tag, e1.getX() + " " + e1.getY());
                     Log.i(Tag, e2.getX() + " " + e2.getY());
                     return true;
@@ -307,7 +293,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                         break;
                 }
             }
-
         };*/
         mThreadPool.execute(new Runnable() {
             @Override
@@ -383,12 +368,31 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
 
-
         //the camera view size & orientation issue can be fix in
         //CameraBridgeViewBase.java in opencv library
         //in the function "deliverAndDrawFrame"
         mRgba = inputFrame.rgba();
         mGray=inputFrame.gray();
+
+        //相機內部參數
+        //cameraMatrix.put(0,0,608.33742247);
+        cameraMatrix.put(0,0,550.33742247);
+        cameraMatrix.put(0,1,0);
+        cameraMatrix.put(0,2,mRgba.cols()/2);
+        cameraMatrix.put(1,0,0);
+        //cameraMatrix.put(1,1,607.41692009);
+        cameraMatrix.put(1,1,550.41692009);
+        cameraMatrix.put(1,2,mRgba.rows()/2);
+        cameraMatrix.put(2,0,0);
+        cameraMatrix.put(2,1,0);
+        cameraMatrix.put(2,2,1);
+
+        //distCoeffs
+        distCoeffs.put(0,0,0.114998524);
+        distCoeffs.put(0,1,-0.0399730218);
+        distCoeffs.put(0,2,0.00108110572);
+        distCoeffs.put(0,3,-0.000319788278);
+        distCoeffs.put(0,4,-0.699416596);
 
         //偵測CAMERA的keypoint and descriptor*/
         featureDetector.detect(mGray,keyPoint_test);
@@ -405,9 +409,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Double min_dist = 100.0;
         Log.i("descriptor"," row: "+descriptor1.rows()+" col: "+descriptor1.cols());
         for(int i = 0; i < descriptor1.rows(); i++){
-                Double dist = (double) matchesList.get(i).distance;
-                if (dist < min_dist) min_dist = dist;
-                if (dist > max_dist) max_dist = dist;
+            Double dist = (double) matchesList.get(i).distance;
+            if (dist < min_dist) min_dist = dist;
+            if (dist > max_dist) max_dist = dist;
         }
 
         Log.i("distance","min: "+min_dist+" max: "+max_dist);
@@ -474,8 +478,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         List<Point3> makerList = new ArrayList<Point3>();
         for(int i = 0; i<good_matches.size(); i++){
             Log.i("XandY"," "+keypoints_objectList.get(good_matches.get(i).queryIdx).pt.x+" "+keypoints_objectList.get(good_matches.get(i).queryIdx).pt.y);
-            makerList.add(new Point3(( keypoints_objectList.get(good_matches.get(i).queryIdx).pt.x-maker.cols()/2 )*200/maker.cols(),
-                   -(( keypoints_objectList.get(good_matches.get(i).queryIdx).pt.y-maker.rows()/2 )*200/maker.rows()),0) );
+            makerList.add(new Point3( -(( keypoints_objectList.get(good_matches.get(i).queryIdx).pt.x-maker.cols()/2 )*200/maker.cols()),
+                    0,(( keypoints_objectList.get(good_matches.get(i).queryIdx).pt.y-maker.rows()/2 )*200/maker.rows())));
         }
         MatOfPoint3f makerPoints =new MatOfPoint3f();
         makerPoints.fromList(makerList);
@@ -493,8 +497,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Core.gemm(rotMat.inv(),Tvec,-1,new Mat(),0,result);//result=alpha*src1*src2+beta*src3
         Log.i("cameraWorld", result.get(0,0)[0]+" "+result.get(1,0)[0]+" "+result.get(2,0)[0]);
         // right-handed coordinates system (OpenCV) to left-handed one (Unity)
-        final Point3 unityPosition= new Point3(-result.get(0,0)[0],result.get(1,0)[0],result.get(2,0)[0]);
+
+        unityPosition= new Point3(result.get(0,0)[0],-result.get(1,0)[0],result.get(2,0)[0]);
+
         Log.i("unityPosition", unityPosition.x+" "+unityPosition.y+" "+unityPosition.z);
+        Log.i("解析度", mRgba.cols()+" "+mRgba.rows());
 
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -505,7 +512,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     public void run() {
                         while(true) {
                             //st = x + " " + y + " " + z + " " + viewX + " " + viewY + " " + viewZ + " " + playerList + " " + moveX + " " + moveY + " ";
-                            st = unityPosition.x/10 + " " + unityPosition.y/10 + " " + unityPosition.z/10 + " " + decimalFormat.format(Rvec.get(0,0)[0]) + " " + decimalFormat.format(Rvec.get(1,0)[0]) + " " + decimalFormat.format(Rvec.get(2,0)[0]) + " " + playerList + " " + moveX + " " + moveY + " ";
+                            st = decimalFormat.format(unityPosition.x/10) + " " + decimalFormat.format(unityPosition.y/10) + " " + decimalFormat.format(unityPosition.z/10) + " " + decimalFormat.format(Rvec.get(0,0)[0]) + " " + decimalFormat.format(Rvec.get(1,0)[0]) + " " + decimalFormat.format(Rvec.get(2,0)[0]) + " " + playerList + " " + move + " ";
                             try {
                                 //從socket獲得輸出流outputStream
                                 outputStream = socket.getOutputStream();
@@ -517,6 +524,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 //重置move
                                 moveX = 0;
                                 moveY = 0;
+                                move = -1;
 
                                 System.out.println("開始接收檔案");
                                 DataInputStream dataInput = new DataInputStream(socket.getInputStream());
@@ -533,7 +541,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     len += dataInput.read(data[buffer], len, datasize - len);
                                 }
                                 try {
-                                    Thread.sleep(160);
+                                    Thread.sleep(150);
                                 } catch (InterruptedException ex) {
                                     Thread.currentThread().interrupt();
                                 }
