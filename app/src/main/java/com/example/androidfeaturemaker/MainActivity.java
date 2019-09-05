@@ -74,6 +74,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.lang.Thread;
 import java.text.DecimalFormat;
 
 import static org.opencv.core.Core.add;
@@ -88,12 +89,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     protected static final float FLIP_DISTANCE = 150;
 
-    private ExecutorService mThreadPool;
+    //private ExecutorService mThreadPool;
     //網路串流
     private Socket socket;
     OutputStream outputStream;
+    int datasize;
     //紀錄登入序號
-    int playerList;
+    int playerList = -1;
     //紀錄玩家資訊
     Point3 unityPosition;
     int move = -1;
@@ -275,7 +277,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         /*-------------------------------------------------------------------------------------------*/
         // 初始化線程
-        mThreadPool = Executors.newCachedThreadPool();
+        //mThreadPool = Executors.newCachedThreadPool();
         /*mMainHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
@@ -386,7 +388,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }
 
         Log.i("distance","min: "+min_dist+" max: "+max_dist);
-        if(min_dist > 30 )
+        if(min_dist > 70 )
             return mRgba;
 
         LinkedList<DMatch> good_matches = new LinkedList<DMatch>();
@@ -416,7 +418,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             Log.i("point2",""+keypoints_sceneList.get(good_matches.get(i).trainIdx).pt);
             objList.addLast(keypoints_objectList.get(good_matches.get(i).queryIdx).pt);
             sceneList.addLast(keypoints_sceneList.get(good_matches.get(i).trainIdx).pt);
-            Imgproc.circle(mRgba,keypoints_sceneList.get(good_matches.get(i).trainIdx).pt,2,new Scalar(255, 0, 255), -1);
+            //Imgproc.circle(mRgba,keypoints_sceneList.get(good_matches.get(i).trainIdx).pt,2,new Scalar(255, 0, 255), -1);
         }
 
         MatOfPoint2f obj = new MatOfPoint2f();
@@ -425,25 +427,23 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         MatOfPoint2f scene = new MatOfPoint2f();
         scene.fromList(sceneList);
 
+        /*
         //找出實景跟maker間的homography
         Mat hg = Calib3d.findHomography(obj, scene,0,Calib3d.RANSAC);
-
         Mat obj_corners = new Mat(4,1,CvType.CV_32FC2);
         Mat scene_corners = new Mat(4,1,CvType.CV_32FC2);
-
         obj_corners.put(0, 0, new double[] {0,0});
         obj_corners.put(1, 0, new double[] {makerGray.cols(),0});
         obj_corners.put(2, 0, new double[] {makerGray.cols(),makerGray.rows()});
         obj_corners.put(3, 0, new double[] {0,makerGray.rows()});
-
         //利用homography和maker已知的4個角來推出maker在實景中的位置
         Core.perspectiveTransform(obj_corners,scene_corners, hg);
-
         //劃出實景中maker邊線
         Imgproc.line(mRgba, new Point(scene_corners.get(0,0)), new Point(scene_corners.get(1,0)), new Scalar(0, 255, 0),4);
         Imgproc.line(mRgba, new Point(scene_corners.get(1,0)), new Point(scene_corners.get(2,0)), new Scalar(0, 255, 0),4);
         Imgproc.line(mRgba, new Point(scene_corners.get(2,0)), new Point(scene_corners.get(3,0)), new Scalar(0, 255, 0),4);
         Imgproc.line(mRgba, new Point(scene_corners.get(3,0)), new Point(scene_corners.get(0,0)), new Scalar(0, 255, 0),4);
+        */
 
         //推出相機在世界座標系的位置
         List<Point3> makerList = new ArrayList<Point3>();
@@ -477,8 +477,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                mThreadPool.execute(new Runnable() {
+                Thread connectServer = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -492,45 +491,45 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 Thread.currentThread().interrupt();
                             }
 
-                            st = mRgba.cols() + " " + mRgba.rows();
+                            st = mRgba.cols()/2 + " " + mRgba.rows()/2;
                             outputStream = socket.getOutputStream();
                             outputStream.write((st).getBytes("utf-8"));
                             outputStream.flush();
 
                             // record player's list
                             InputStream in = socket.getInputStream();
+                            int len = 0;
+                            byte[]tmp = new byte[4];
+                            //datasize = in.available();
+                            //in.read(tmp, len, datasize - len);
                             playerList = in.read();
-                            Log.i("playerlist", "playerlist : "+playerList);
+                            //Log.i("playerlist", "playerlist : "+playerList + "大小" + datasize);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
                     }
                 });
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
-                }
-                mThreadPool.execute(new Runnable() {
+                Thread transmission = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         while(true) {
-                            //st = x + " " + y + " " + z + " " + viewX + " " + viewY + " " + viewZ + " " + playerList + " " + moveX + " " + moveY + " ";
-                            st = decimalFormat.format(unityPosition.x/10) + " " + decimalFormat.format(unityPosition.y/10) + " " + decimalFormat.format(unityPosition.z/10) + " " + decimalFormat.format(Rvec.get(0,0)[0]) + " " + decimalFormat.format(Rvec.get(1,0)[0]) + " " + decimalFormat.format(Rvec.get(2,0)[0]) + " " + playerList + " " + move + " ";
+                            st = decimalFormat.format(unityPosition.x/4) + " " + decimalFormat.format(unityPosition.y/4) + " " + decimalFormat.format(unityPosition.z/4) + " " + decimalFormat.format(Rvec.get(0,0)[0]) + " " + decimalFormat.format(Rvec.get(1,0)[0]) + " " + decimalFormat.format(Rvec.get(2,0)[0]) + " " + playerList + " " + move + " ";
                             try {
                                 //從socket獲得輸出流outputStream
                                 outputStream = socket.getOutputStream();
                                 //寫入數據到輸出流
                                 outputStream.write((st).getBytes("utf-8"));
-                                // 特别注意：数据的结尾加上换行符才可让服务器端的readline()停止阻塞
                                 //發送
                                 outputStream.flush();
                                 //重置move
                                 move = -1;
 
                                 System.out.println("開始接收檔案");
-                                DataInputStream dataInput = new DataInputStream(socket.getInputStream());
-                                int datasize = dataInput.available();
+                                //DataInputStream dataInput = new DataInputStream(socket.getInputStream());
+                                InputStream inputStream = socket.getInputStream();
+                                datasize = 0;
+                                while(datasize == 0) {datasize = inputStream.available();}
+                                //int datasize = dataInput.available();
                                 System.out.println("大小: " + datasize);
                                 //互換buffer----------------------------------------------------
                                 if(datasize > 0) { buffer = java.lang.Math.abs(buffer-1); }
@@ -539,29 +538,32 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 System.out.println("buffer = " + buffer);
                                 //--------------------------------------------------------------
                                 int len = 0;
-                                while (len < datasize) {
-                                    len += dataInput.read(data[buffer], len, datasize - len);
-                                }
-                                try {
-                                    Thread.sleep(150);
-                                } catch (InterruptedException ex) {
-                                    Thread.currentThread().interrupt();
-                                }
-                                System.out.println("接收大小 : " + len);
+                                inputStream.read(data[buffer], len, datasize - len);
+                                //System.out.println("接收大小 : " + len);
                                 System.out.println("接收檔案完成");
-                                if(len < 100) continue;
                                 //bmp = BitmapFactory.decodeByteArray(data[buffer], 0, data[buffer].length); //need thread to complete this step
                                 /*bmp32 = bmp.copy(bmp.getConfig(), true);
                                 Utils.bitmapToMat(bmp32, oldpaste);*/
-                                paste = Imgcodecs.imdecode(new MatOfByte(data[buffer]), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
-
+                                if(len > 100){
+                                    paste = Imgcodecs.imdecode(new MatOfByte(data[buffer]), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
+                                    /*try {
+                                        Thread.sleep(150);
+                                    } catch (InterruptedException ex) {
+                                        Thread.currentThread().interrupt();
+                                    }*/
+                                    Log.i("resolution",paste.rows()+" "+paste.cols());
+                                }
                                 //paste.put(0,0, data[buffer]);
                                 //Imgproc.resize(mat, paste,size);//將圖片大小設為跟maker一樣*/
                                 /*Message msg = Message.obtain();
                                 mMainHandler.sendMessage(msg);*/
 
                                 System.out.println("放置圖片完成");
-
+                                try {
+                                    Thread.sleep(150);
+                                } catch (InterruptedException ex) {
+                                    Thread.currentThread().interrupt();
+                                }
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -569,34 +571,34 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     }
                 });
 
+                //start thread
+                connectServer.start();
+                try{
+                    connectServer.join();
+                    transmission.start();
+                }catch (InterruptedException e){
+                    e.printStackTrace();
+                }
             }
         });
-/*
-        //將obj與實景貼合
-        for(int height=0;height<paste.rows();height++){
-            for(int width=0;width<paste.cols();width++){
-                //將貼圖(height,width)位置存下來
-                obj_pixel.put(height, width, new double[] {height,width});
+        Mat base=new Mat();
+        //Mat mask=new Mat();
+        if(paste.rows()!=0) {
+            Imgproc.resize(mRgba, base, new Size(mRgba.cols() / 2, mRgba.rows() / 2));
+            //Imgproc.resize(paste, mask, new Size(paste.cols() / 4, paste.rows() / 4));
+            //將obj的每一個pixel貼到實景上
+            for (int height = 0; height < base.rows(); height++) {
+                for (int width = 0; width < base.cols(); width++) {
+                    //將貼圖(height,width)位置的pixel的資料存下來
+                    double[] data = paste.get(height, width);
+                    Log.i("color", "R:" + data[0] + " G:" + data[1] + " B:" + data[2] + " A:" + data[3]);
+                    if(data[0]==0 && data[1]==0 && data[2]==0 && data[3]==0)
+                        continue;
+                    base.put(height, width, data[0], data[1], data[2], data[3]);
+                }
             }
+            Imgproc.resize(base, mRgba, new Size(base.cols() * 2, base.rows() * 2));
         }
-        //將貼圖(height,width)位置轉換成在實景的位置,存在scene_pixel中
-        Core.perspectiveTransform(obj_pixel,scene_pixel, hg);
-        //將obj的每一個pixel貼到實景上
-        for(int height=0;height<paste.rows();height++){
-            for(int width=0;width<paste.cols();width++){
-                //將貼圖(height,width)位置的pixel的資料存下來
-                double[] data=paste.get(height,width);
-                Point point=new Point(scene_pixel.get(height,width));
-                if(point.x>mRgba.cols()||point.x<0||point.y>mRgba.rows()||point.y<0)
-                    continue;
-                Log.i("pixelPosition",""+point.x+point.y);
-                //Log.i("color","R:"+data[0]+" G:"+data[1]+" B:"+data[2]+" A:"+data[3]);
-                //point.y對應row，point.x對應col,data[0-3] RGBA
-                if(data[0]==255 && data[1]==255 && data[2]==255)//將obj白色部份去掉
-                    continue;
-                mRgba.put((int)point.y,(int)point.x,data[0],data[1],data[2],data[3]);
-            }
-        }*/
         return mRgba;
     }
 }
