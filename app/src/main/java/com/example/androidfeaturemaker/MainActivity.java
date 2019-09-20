@@ -203,12 +203,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         javaCameraView.setVisibility(SurfaceView.VISIBLE);
         javaCameraView.setCvCameraViewListener(this);
 
-        btnSend.setOnClickListener(new View.OnClickListener() {
+        /*btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 beginG = true;
             }
-        });
+        });*/
 
         Thread positionEstimate = new Thread(new Runnable() {
             @Override
@@ -468,7 +468,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         mRgba = inputFrame.rgba();
         mGray=inputFrame.gray();
         frameBuffer=mGray;
-        if(!checkConnect){
+        /*if(!checkConnect){
             Thread connectThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -505,8 +505,51 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 }
             });
             connectThread.start();
-        }
-        if(beginG){
+        }*/
+
+        btnSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Thread connectThread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            // 創建socket IP port
+                            socket = new Socket("140.121.197.164", 80);
+                            // 判斷是否連接成功
+                            //System.out.println(socket.isConnected());
+
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException ex) {
+                                Thread.currentThread().interrupt();
+                            }
+
+                            //傳送圖片解析度
+                            st = mRgba.cols() + " " + mRgba.rows();
+                            outputStream = socket.getOutputStream();
+                            outputStream.write((st).getBytes("utf-8"));
+                            outputStream.flush();
+
+                            // record player's list
+                            InputStream in = socket.getInputStream();
+                            int len = 0;
+                            byte[]tmp = new byte[4];
+                            //datasize = in.available();
+                            //in.read(tmp, len, datasize - len);
+                            playerList = in.read();
+                            //Log.i("playerlist", "playerlist : "+playerList + "大小" + datasize);
+                            checkConnect = true;
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                connectThread.start();
+            }
+        });
+
+        if(checkConnect){
             st = decimalFormat.format(Position.x/10*2) + " " + decimalFormat.format(Position.y/10*2) + " " + decimalFormat.format(Position.z/10*2) + " " + decimalFormat.format(Rvec.get(0,0)[0]) + " " + decimalFormat.format(Rvec.get(1,0)[0]) + " " + decimalFormat.format(Rvec.get(2,0)[0]) + " " + playerList + " " + move + " ";
             try {
                 //從socket獲得輸出流outputStream
@@ -548,11 +591,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             mMainHandler.sendMessage(msg);*/
 
                 System.out.println("放置圖片完成");
-                /*try {
+                try {
                     Thread.sleep(500);
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
-                }*/
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
