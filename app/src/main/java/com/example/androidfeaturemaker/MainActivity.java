@@ -63,11 +63,14 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.video.Video;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -119,11 +122,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     //紀錄登入序號
     int playerList = -1;
     //紀錄玩家資訊
+    String st1;
     int ready = 0;
     int move = -1;
     String st;
     //test
     private Button btnSend;
+    private Button btnReady;
     ImageView imgView;
     private Handler mMainHandler;
     Bitmap bmp;
@@ -203,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         btnSend = (Button) findViewById(R.id.Begin);
+        btnReady = (Button) findViewById(R.id.Ready);
         imgView = (ImageView)findViewById(R.id.image);
         Button calibration = (Button) findViewById(R.id.Calibration);
         calibration.setOnClickListener(new Button.OnClickListener() {
@@ -357,6 +363,20 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         });
         positionEstimate.start();
 
+        btnReady.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(ready==0){
+                    btnReady.setText("取消準備");
+                    ready = 1;
+                }
+                else {
+                    btnReady.setText("準備");
+                    ready = 0;
+                }
+            }
+        });
+
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -393,7 +413,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                         }
                     }
                 });
-                Thread transmission = new Thread(new Runnable() {
+                Thread transmission =  new Thread(new Runnable() {
                     @Override
                     public void run() {
                         while (true) {
@@ -438,9 +458,28 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     /*------------------------------------------------------------*/
                                 }else {
                                     data[buffer] = new byte[datasize];
-                                    inputStream.read(data[buffer], 0, datasize);
+                                    inputStream.read();
+                                    /*接收場上訊息------------------------------------------------*/
+                                    /*final int bufferSize = 1024;
+                                    final char[] buffer = new char[bufferSize];
+                                    final StringBuilder out = new StringBuilder();
+                                    Reader in = new InputStreamReader(inputStream, "UTF-8");
+                                    int rsz = in.read(buffer, 0, buffer.length);
+                                    if (rsz < 0)
+                                        break;
+                                    out.append(buffer, 0, rsz);
+                                    st1 = out.toString();
+                                    Log.i("st1",""+st1);*/
+                                    /*------------------------------------------------------------*/
                                 }
                                 System.out.println("放置圖片完成");
+
+                                /*byte[] buffer = new byte[datasize];
+                                ByteArrayOutputStream Bstream = new ByteArrayOutputStream();
+                                Bstream.write(buffer, 0, datasize);
+                                st1 = Bstream.toString();
+                                Log.i("st1",""+st1);*/
+
                                 try {
                                     Thread.sleep(100);
                                 } catch (InterruptedException ex) {
