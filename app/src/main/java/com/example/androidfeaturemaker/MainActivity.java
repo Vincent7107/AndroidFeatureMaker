@@ -118,7 +118,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     boolean checkConnect = false;
     boolean beginG = false;
     int datasize;
-    byte[][] data = new byte[2][];
+    //byte[][] data = new byte[2][];
+    byte[] data;
     //紀錄登入序號
     int playerList = -1;
     //紀錄玩家資訊
@@ -434,20 +435,26 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 //DataInputStream dataInput = new DataInputStream(socket.getInputStream());
                                 InputStream inputStream = socket.getInputStream();
                                 datasize = 0;
-                                while(datasize == 0) {datasize = inputStream.available();}
+                                while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
                                 Log.i("接收大小", "" + datasize);
                                 /*互換buffer------------------------------------------------------*/
                                 if (datasize > 100) {
-                                    buffer = java.lang.Math.abs(buffer - 1);
-                                    data[buffer] = new byte[datasize];
-                                    Log.i("buffer", "" + buffer);
-                                    /*將緩衝區read到data[buffer]----------------------------------*/
-                                    inputStream.read(data[buffer], 0, datasize);
+                                    //buffer = java.lang.Math.abs(buffer - 1);
+                                    data = new byte[datasize];
+                                    //data[buffer] = new byte[datasize];
+                                    /*將緩衝區read到data------------------------------------------*/
+                                    int len = 0;
+                                    while(len<datasize){//保證讀取接收到的量
+                                        len += inputStream.read(data, len, datasize-len);
+                                    }
+                                    //inputStream.read(data[buffer], 0, datasize);
                                     System.out.println("接收檔案完成");
                                     /*將data[buffer]轉為所需型態----------------------------------*/
                                     lock.lock();
-                                    bmp = BitmapFactory.decodeByteArray(data[buffer], 0, data[buffer].length); //need thread to complete this step
-                                    paste = Imgcodecs.imdecode(new MatOfByte(data[buffer]), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
+                                    bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+                                    //bmp = BitmapFactory.decodeByteArray(data[buffer], 0, data[buffer].length); //need thread to complete this step
+                                    paste = Imgcodecs.imdecode(new MatOfByte(data), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
+                                    //paste = Imgcodecs.imdecode(new MatOfByte(data[buffer]), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
                                     Message msg = Message.obtain();
                                     mMainHandler.sendMessage(msg);
                                     Log.i("resolution", paste.toString());
@@ -457,7 +464,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     lock.unlock();
                                     /*------------------------------------------------------------*/
                                 }else {
-                                    data[buffer] = new byte[datasize];
+                                    data = new byte[datasize];
+                                    //data[buffer] = new byte[datasize];
                                     inputStream.read();
                                     /*接收場上訊息------------------------------------------------*/
                                     /*final int bufferSize = 1024;
@@ -473,7 +481,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     /*------------------------------------------------------------*/
                                 }
                                 System.out.println("放置圖片完成");
-
+                                data = null;
                                 /*byte[] buffer = new byte[datasize];
                                 ByteArrayOutputStream Bstream = new ByteArrayOutputStream();
                                 Bstream.write(buffer, 0, datasize);
@@ -481,7 +489,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 Log.i("st1",""+st1);*/
 
                                 try {
-                                    Thread.sleep(100);
+                                    Thread.sleep(50);
                                 } catch (InterruptedException ex) {
                                     Thread.currentThread().interrupt();
                                 }
