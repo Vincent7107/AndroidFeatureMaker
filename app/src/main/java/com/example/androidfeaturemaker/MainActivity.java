@@ -130,6 +130,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     //test
     private Button btnSend;
     private Button btnReady;
+    private Button btnClose;
     ImageView imgView;
     private Handler mMainHandler;
     Bitmap bmp;
@@ -210,6 +211,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         setContentView(R.layout.activity_main);
         btnSend = (Button) findViewById(R.id.Begin);
         btnReady = (Button) findViewById(R.id.Ready);
+        btnClose = (Button) findViewById(R.id.close);
         imgView = (ImageView)findViewById(R.id.image);
         Button calibration = (Button) findViewById(R.id.Calibration);
         calibration.setOnClickListener(new Button.OnClickListener() {
@@ -363,6 +365,17 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             }
         });
         positionEstimate.start();
+
+        btnClose.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    socket.close();
+                }catch(IOException e){
+
+                }
+            }
+        });
 
         btnReady.setOnClickListener(new View.OnClickListener() {
             @Override
