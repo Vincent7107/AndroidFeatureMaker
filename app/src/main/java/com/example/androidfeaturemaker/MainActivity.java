@@ -432,15 +432,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 move = -1;
                                 /*接收檔案--------------------------------------------------------*/
                                 System.out.println("開始接收檔案");
-                                //DataInputStream dataInput = new DataInputStream(socket.getInputStream());
                                 InputStream inputStream = socket.getInputStream();
                                 datasize = 0;
                                 while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
                                 Log.i("接收大小", "" + datasize);
-                                /*互換buffer------------------------------------------------------*/
-                                if (datasize > 100) {
+                                data = new byte[datasize];
+                                if (datasize > 1500) {
                                     //buffer = java.lang.Math.abs(buffer - 1);
-                                    data = new byte[datasize];
                                     //data[buffer] = new byte[datasize];
                                     /*將緩衝區read到data------------------------------------------*/
                                     int len = 0;
@@ -481,7 +479,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     /*------------------------------------------------------------*/
                                 }
                                 System.out.println("放置圖片完成");
-                                data = null;
                                 /*byte[] buffer = new byte[datasize];
                                 ByteArrayOutputStream Bstream = new ByteArrayOutputStream();
                                 Bstream.write(buffer, 0, datasize);
