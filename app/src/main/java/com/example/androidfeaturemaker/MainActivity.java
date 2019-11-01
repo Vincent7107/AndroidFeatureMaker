@@ -92,6 +92,7 @@ import static org.opencv.core.Core.gemm;
 import static org.opencv.core.Core.log;
 import static org.opencv.core.Core.pow;
 import static org.opencv.core.Core.sqrt;
+import static org.opencv.core.Core.trace;
 import static org.opencv.core.CvType.CV_16SC3;
 import static org.opencv.core.CvType.CV_16UC3;
 import static org.opencv.core.CvType.CV_8UC3;
@@ -113,6 +114,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     protected static final float FLIP_DISTANCE = 150;
     private ExecutorService mThreadPool;
     //網路串流
+    InputStream inputStream;
+    Thread connectServer;
+    Thread transmission;
     private Socket socket;
     OutputStream outputStream;
     boolean checkConnect = false;
@@ -370,9 +374,14 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void onClick(View v) {
                 try {
+                    outputStream.close();
+                    inputStream.close();
                     socket.close();
+                    transmission.interrupt();
+                    connectServer.interrupt();
+                    connectServer = null;
+                    transmission = null;
                 }catch(IOException e){
-
                 }
             }
         });
@@ -394,7 +403,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Thread connectServer = new Thread(new Runnable() {
+                connectServer = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -407,9 +416,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                             } catch (InterruptedException ex) {
                                 Thread.currentThread().interrupt();
                             }
-
                             //傳送圖片解析度
-                            st = mRgba.cols() + " " + mRgba.rows();
+                            st = decimalFormat.format(UnityPosition.x / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5) + " " + decimalFormat.format(Rvec.get(0, 0)[0]) + " " + decimalFormat.format(Rvec.get(1, 0)[0]) + " " + decimalFormat.format(Rvec.get(2, 0)[0]) + " " + playerList + " " + move + " " + ready + " " + mRgba.cols() + " " + mRgba.rows() + " ";
+                            //st = mRgba.cols() + " " + mRgba.rows();
                             outputStream = socket.getOutputStream();
                             outputStream.write((st).getBytes("utf-8"));
                             outputStream.flush();
@@ -427,12 +436,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                         }
                     }
                 });
-                Thread transmission =  new Thread(new Runnable() {
+                transmission =  new Thread(new Runnable() {
                     @Override
                     public void run() {
                         while (true) {
                             //將資訊串接成string傳送
-                            st = decimalFormat.format(UnityPosition.x / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5) + " " + decimalFormat.format(Rvec.get(0, 0)[0]) + " " + decimalFormat.format(Rvec.get(1, 0)[0]) + " " + decimalFormat.format(Rvec.get(2, 0)[0]) + " " + playerList + " " + move + " " + ready + " ";
+                            st = decimalFormat.format(UnityPosition.x / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5) + " " + decimalFormat.format(Rvec.get(0, 0)[0]) + " " + decimalFormat.format(Rvec.get(1, 0)[0]) + " " + decimalFormat.format(Rvec.get(2, 0)[0]) + " " + playerList + " " + move + " " + ready + " " + mRgba.cols() + " " + mRgba.rows() + " ";
                             try {
                                 /*將字串寫入輸出流------------------------------------------------*/
                                 //從socket獲得輸出流outputStream
@@ -445,12 +454,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 move = -1;
                                 /*接收檔案--------------------------------------------------------*/
                                 System.out.println("開始接收檔案");
-                                InputStream inputStream = socket.getInputStream();
+                                inputStream = socket.getInputStream();
                                 datasize = 0;
                                 while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
                                 Log.i("接收大小", "" + datasize);
                                 data = new byte[datasize];
-                                if (datasize > 1500) {
+                                if (datasize > 1700) {
                                     //buffer = java.lang.Math.abs(buffer - 1);
                                     //data[buffer] = new byte[datasize];
                                     /*將緩衝區read到data------------------------------------------*/
@@ -504,6 +513,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     Thread.currentThread().interrupt();
                                 }
                             } catch (IOException e) {
+                                try {
+                                    outputStream.close();
+                                }catch(IOException ee){}
                                 e.printStackTrace();
                             }
                         }
