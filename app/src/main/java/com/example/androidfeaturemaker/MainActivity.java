@@ -217,7 +217,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         btnReady = (Button) findViewById(R.id.Ready);
         btnClose = (Button) findViewById(R.id.close);
         imgView = (ImageView)findViewById(R.id.image);
-        Button calibration = (Button) findViewById(R.id.Calibration);
+        /*Button calibration = (Button) findViewById(R.id.Calibration);
         calibration.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -225,7 +225,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 intent.setClass(MainActivity.this, Calibration.class);
                 startActivity(intent);
             }
-        });
+        });*/
         bmp = BitmapFactory.decodeResource(getResources(), R.drawable.p1);
         bmp32 = bmp.copy(Bitmap.Config.ARGB_8888, true);
         Utils.bitmapToMat(bmp32, maker);
@@ -274,6 +274,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     //偵測CAMERA的keypoint and descriptor
                     featureDetector.detect(estimateFrame, keyPoint_test);
                     descriptorExtractor.compute(estimateFrame, keyPoint_test, descriptor2);
+
+                    Log.i("descriptor1",""+descriptor1.toString());
+                    Log.i("descriptor2",""+descriptor2.toString());
+                    if(descriptor2.empty()){
+                        DETECTTOMAKER = FALSE;
+                        continue;
+                    }
 
                     matcher.match(descriptor1, descriptor2, matches);
                     List<DMatch> matchesList = matches.toList();
@@ -374,13 +381,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void onClick(View v) {
                 try {
+                    checkConnect = false;
                     outputStream.close();
                     inputStream.close();
                     socket.close();
-                    transmission.interrupt();
-                    connectServer.interrupt();
-                    connectServer = null;
-                    transmission = null;
                 }catch(IOException e){
                 }
             }
@@ -415,6 +419,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                             } catch (InterruptedException ex) {
                                 Thread.currentThread().interrupt();
                             }
+                            checkConnect = true;
                             //傳送圖片解析度
                             st = mRgba.cols() + " " + mRgba.rows();
                             outputStream = socket.getOutputStream();
@@ -437,7 +442,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 transmission =  new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        while (true) {
+                        while (checkConnect) {
                             //將資訊串接成string傳送
                             st = decimalFormat.format(UnityPosition.x / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5) + " " + decimalFormat.format(Rvec.get(0, 0)[0]) + " " + decimalFormat.format(Rvec.get(1, 0)[0]) + " " + decimalFormat.format(Rvec.get(2, 0)[0]) + " " + playerList + " " + move + " " + ready + " ";
                             try {
@@ -508,9 +513,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     Thread.currentThread().interrupt();
                                 }
                             } catch (IOException e) {
-                                try {
+                                /*try {
                                     outputStream.close();
-                                }catch(IOException ee){}
+                                }catch(IOException ee){}*/
                                 e.printStackTrace();
                             }
                         }
