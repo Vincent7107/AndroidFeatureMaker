@@ -10,7 +10,9 @@
         android:id="@+id/java_camera_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:show_fps="true" />
+        app:show_fps="true"
+        tools:layout_editor_absoluteX="16dp"
+        tools:layout_editor_absoluteY="-126dp" />
 
     <Button
         android:id="@+id/Calibration"
@@ -56,5 +58,38 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@id/Begin"
         tools:layout_editor_absoluteY="48dp"></ImageView>
+
+    <TextView
+        android:id="@+id/color"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="顏色"
+        android:textSize="30dp"
+        android:textColor="@android:color/background_light"
+        app:layout_constraintTop_toBottomOf="@id/image"
+        app:layout_constraintLeft_toLeftOf="@id/image"
+        tools:layout_editor_absoluteY="122dp" />
+
+    <TextView
+        android:id="@+id/speed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="速度"
+        android:textSize="30dp"
+        android:textColor="@android:color/background_light"
+        app:layout_constraintTop_toBottomOf="@id/color"
+        app:layout_constraintLeft_toLeftOf="@id/image"
+        tools:layout_editor_absoluteY="122dp" />
+
+    <TextView
+        android:id="@+id/size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="大小"
+        android:textSize="30dp"
+        android:textColor="@android:color/background_light"
+        app:layout_constraintTop_toBottomOf="@id/speed"
+        app:layout_constraintLeft_toLeftOf="@id/image"
+        tools:layout_editor_absoluteY="122dp" />
 
 </android.support.constraint.ConstraintLayout>

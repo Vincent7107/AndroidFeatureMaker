@@ -127,7 +127,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     //紀錄登入序號
     int playerList = -1;
     //紀錄玩家資訊
-    String st1;
     int ready = 0;
     int move = -1;
     String st;
@@ -135,6 +134,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private Button btnSend;
     private Button btnReady;
     private Button btnClose;
+    private TextView txvcolor;
+    private TextView txvspeed;
+    private TextView txvsize;
     ImageView imgView;
     private Handler mMainHandler;
     Bitmap bmp;
@@ -217,6 +219,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         btnReady = (Button) findViewById(R.id.Ready);
         btnClose = (Button) findViewById(R.id.close);
         imgView = (ImageView)findViewById(R.id.image);
+        txvcolor = (TextView) findViewById(R.id.color);
+        txvspeed = (TextView) findViewById(R.id.speed);
+        txvsize = (TextView) findViewById(R.id.size);
         /*Button calibration = (Button) findViewById(R.id.Calibration);
         calibration.setOnClickListener(new Button.OnClickListener() {
             @Override
