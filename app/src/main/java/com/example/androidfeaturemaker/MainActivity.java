@@ -130,8 +130,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     int ready = 0;
     int move = -1;
     String st;
-    String st1;
-    String[] stArray;
+    String st1 = "45220";
     //test
     private Button btnSend;
     private Button btnReady;
@@ -494,9 +493,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     }
                                     lock.unlock();
                                     /*------------------------------------------------------------*/
-                                }else {
-                                    //data[buffer] = new byte[datasize];
-                                    //inputStream.read();
+                                }else if(datasize == 5){
                                     /*接收場上訊息------------------------------------------------*/
                                     final int bufferSize = 1024;
                                     final char[] buffer = new char[bufferSize];
@@ -508,11 +505,17 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     out.append(buffer, 0, rsz);
                                     st1 = out.toString();
                                     Log.i("st1",""+st1 + "total:" + datasize);
+                                    //setStatus(st1);
+                                    Message msg = Message.obtain();
+                                    mMainHandler.sendMessage(msg);
                                     /*------------------------------------------------------------*/
+                                }else{
+                                    data = new byte[datasize];
+                                    inputStream.read();
                                 }
 
                                 try {
-                                    Thread.sleep(100);
+                                    Thread.sleep(150);
                                 } catch (InterruptedException ex) {
                                     Thread.currentThread().interrupt();
                                 }
@@ -609,11 +612,40 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void handleMessage(Message msg) {
                 imgView.setImageBitmap(bmp);
-                switch (msg.what) {
+                char[] c  = st1.toCharArray();
+                switch(c[0]){
+                    case '0':
+                        txvcolor.setText("紅色");
+                        break;
+                    case '1':
+                        txvcolor.setText("黃色");
+                        break;
+                    case '2':
+                        txvcolor.setText("藍色");
+                        break;
+                    case '3':
+                        txvcolor.setText("綠色");
+                        break;
+                    default:
+                        txvcolor.setText("顏色");
+                }
+                txvspeed.setText("速度"+c[1]);
+                txvsize.setText("大小:"+c[2]);
+                switch(c[3]){
+                    case '0':
+                        txvalive.setText("落敗");
+                        break;
+                    case '1':
+                        txvalive.setText("存活");
+                        break;
+                    default:
+                        txvalive.setText("未開始");
+                }
+                /*switch (msg.what) {
                     case 0:
                         //receive_message.setText(input);
                         break;
-                }
+                }*/
             }
         };
     }
