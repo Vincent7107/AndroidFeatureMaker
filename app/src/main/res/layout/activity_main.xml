@@ -92,4 +92,26 @@
         app:layout_constraintLeft_toLeftOf="@id/image"
         tools:layout_editor_absoluteY="122dp" />
 
+    <TextView
+        android:id="@+id/IsAlive"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="存活"
+        android:textSize="30dp"
+        android:textColor="@android:color/background_light"
+        app:layout_constraintTop_toBottomOf="@id/size"
+        app:layout_constraintLeft_toLeftOf="@id/image"
+        tools:layout_editor_absoluteY="122dp" />
+
+    <TextView
+        android:id="@+id/IsWin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="結果"
+        android:textSize="30dp"
+        android:textColor="@android:color/background_light"
+        app:layout_constraintTop_toBottomOf="@id/IsAlive"
+        app:layout_constraintLeft_toLeftOf="@id/image"
+        tools:layout_editor_absoluteY="122dp" />
+
 </android.support.constraint.ConstraintLayout>

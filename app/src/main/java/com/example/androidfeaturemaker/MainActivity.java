@@ -130,6 +130,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     int ready = 0;
     int move = -1;
     String st;
+    String st1;
+    String[] stArray;
     //test
     private Button btnSend;
     private Button btnReady;
@@ -137,12 +139,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private TextView txvcolor;
     private TextView txvspeed;
     private TextView txvsize;
+    private TextView txvalive;
+    private TextView txvresult;
     ImageView imgView;
     private Handler mMainHandler;
     Bitmap bmp;
     Bitmap bmp32;
     //速度優化
-    int buffer = 0;
     DecimalFormat decimalFormat = new DecimalFormat("##.000");
     Lock lock = new ReentrantLock();
 
@@ -222,6 +225,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         txvcolor = (TextView) findViewById(R.id.color);
         txvspeed = (TextView) findViewById(R.id.speed);
         txvsize = (TextView) findViewById(R.id.size);
+        txvalive = (TextView) findViewById(R.id.IsAlive);
+        txvresult = (TextView) findViewById(R.id.IsWin);
         /*Button calibration = (Button) findViewById(R.id.Calibration);
         calibration.setOnClickListener(new Button.OnClickListener() {
             @Override
@@ -490,11 +495,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     lock.unlock();
                                     /*------------------------------------------------------------*/
                                 }else {
-                                    data = new byte[datasize];
                                     //data[buffer] = new byte[datasize];
-                                    inputStream.read();
+                                    //inputStream.read();
                                     /*接收場上訊息------------------------------------------------*/
-                                    /*final int bufferSize = 1024;
+                                    final int bufferSize = 1024;
                                     final char[] buffer = new char[bufferSize];
                                     final StringBuilder out = new StringBuilder();
                                     Reader in = new InputStreamReader(inputStream, "UTF-8");
@@ -503,14 +507,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                         break;
                                     out.append(buffer, 0, rsz);
                                     st1 = out.toString();
-                                    Log.i("st1",""+st1);*/
+                                    Log.i("st1",""+st1 + "total:" + datasize);
                                     /*------------------------------------------------------------*/
                                 }
-                                /*byte[] buffer = new byte[datasize];
-                                ByteArrayOutputStream Bstream = new ByteArrayOutputStream();
-                                Bstream.write(buffer, 0, datasize);
-                                st1 = Bstream.toString();
-                                Log.i("st1",""+st1);*/
 
                                 try {
                                     Thread.sleep(100);
