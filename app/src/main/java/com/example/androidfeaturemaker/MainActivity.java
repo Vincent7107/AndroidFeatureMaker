@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     //紀錄登入序號
     int playerList = -1;
     //紀錄玩家資訊
-    int ready = 0;
+    boolean ready = false;
     int move = -1;
     String st;
     String st1 = "45220";
@@ -402,14 +402,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         btnReady.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(ready==0){
+                btnReady.setText(ready==false?"取消準備":"準備");
+                ready = !ready;
+                /*if(ready==0){
                     btnReady.setText("取消準備");
                     ready = 1;
                 }
                 else {
                     btnReady.setText("準備");
                     ready = 0;
-                }
+                }*/
             }
         });
 
@@ -437,10 +439,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
                             // record player's list
                             InputStream in = socket.getInputStream();
-                            int len = 0;
-                            byte[] tmp = new byte[4];
-                            //datasize = in.available();
-                            //in.read(tmp, len, datasize - len);
                             playerList = in.read();
                             Log.i("playerlist", "playerlist : "+playerList);
                         } catch (IOException e) {
@@ -451,12 +449,14 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 transmission =  new Thread(new Runnable() {
                     @Override
                     public void run() {
+                        long time1, time2, time3, time4, time5;
                         while (checkConnect) {
                             //將資訊串接成string傳送
                             st = decimalFormat.format(UnityPosition.x / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5) + " " + decimalFormat.format(Rvec.get(0, 0)[0]) + " " + decimalFormat.format(Rvec.get(1, 0)[0]) + " " + decimalFormat.format(Rvec.get(2, 0)[0]) + " " + playerList + " " + move + " " + ready + " ";
                             try {
                                 /*將字串寫入輸出流------------------------------------------------*/
                                 //從socket獲得輸出流outputStream
+                                time1 = System.currentTimeMillis();
                                 outputStream = socket.getOutputStream();
                                 //寫入數據到輸出流
                                 outputStream.write((st).getBytes("utf-8"));
@@ -464,13 +464,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 outputStream.flush();
                                 //重置move
                                 move = -1;
+                                time3 = System.currentTimeMillis();
                                 /*接收檔案--------------------------------------------------------*/
                                 inputStream = socket.getInputStream();
                                 datasize = 0;
-                                while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
+                                //while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
+                                datasize = inputStream.available();
                                 Log.i("接收大小", "" + datasize);
                                 data = new byte[datasize];
-                                if (datasize > 1600) {
+                                time4 = System.currentTimeMillis();
+                                if (datasize > 1451) {
                                     //buffer = java.lang.Math.abs(buffer - 1);
                                     //data[buffer] = new byte[datasize];
                                     /*將緩衝區read到data------------------------------------------*/
@@ -479,12 +482,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                         len += inputStream.read(data, len, datasize-len);
                                     }
                                     //inputStream.read(data[buffer], 0, datasize);
-                                    /*將data[buffer]轉為所需型態----------------------------------*/
+                                    /*將data轉為所需型態------------------------------------------*/
                                     lock.lock();
                                     bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
-                                    //bmp = BitmapFactory.decodeByteArray(data[buffer], 0, data[buffer].length); //need thread to complete this step
                                     paste = Imgcodecs.imdecode(new MatOfByte(data), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
-                                    //paste = Imgcodecs.imdecode(new MatOfByte(data[buffer]), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
                                     Message msg = Message.obtain();
                                     mMainHandler.sendMessage(msg);
                                     Log.i("resolution", paste.toString());
@@ -492,7 +493,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                         Imgproc.cvtColor(paste, paste, COLOR_RGB2BGRA);
                                     }
                                     lock.unlock();
-                                    /*------------------------------------------------------------*/
+
                                 }else if(datasize == 5){
                                     /*接收場上訊息------------------------------------------------*/
                                     final int bufferSize = 1024;
@@ -500,8 +501,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     final StringBuilder out = new StringBuilder();
                                     Reader in = new InputStreamReader(inputStream, "UTF-8");
                                     int rsz = in.read(buffer, 0, buffer.length);
-                                    if (rsz < 0)
-                                        break;
+                                    /*if (rsz < 0)
+                                        break;*/
                                     out.append(buffer, 0, rsz);
                                     st1 = out.toString();
                                     Log.i("st1",""+st1 + "total:" + datasize);
@@ -509,20 +510,22 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     Message msg = Message.obtain();
                                     mMainHandler.sendMessage(msg);
                                     /*------------------------------------------------------------*/
+                                }else if(datasize==0){
                                 }else{
-                                    data = new byte[datasize];
                                     inputStream.read();
                                 }
-
+                                time2 = System.currentTimeMillis();
+                                Log.i("1.doSomething()花了：", "" + (time2-time1)+"size" + datasize);
+                                Log.i("2.doSomething()花了：", "" + (time3-time1)+"size" + datasize);
+                                Log.i("3.doSomething()花了：", "" + (time4-time3)+"size" + datasize);
+                                Log.i("4.doSomething()花了：", "" + (time2-time4)+"size" + datasize);
                                 try {
-                                    Thread.sleep(150);
+                                    Thread.sleep(100);
+
                                 } catch (InterruptedException ex) {
                                     Thread.currentThread().interrupt();
                                 }
                             } catch (IOException e) {
-                                /*try {
-                                    outputStream.close();
-                                }catch(IOException ee){}*/
                                 e.printStackTrace();
                             }
                         }
@@ -606,7 +609,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
 
         /*-------------------------------------------------------------------------------------------*/
-        // 初始化線程
+        //threadpool 1.降低資源消耗 重複利用已建立線程 2.高度線程管理
         mThreadPool = Executors.newCachedThreadPool();
         mMainHandler = new Handler() {
             @Override
@@ -742,6 +745,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 Imgproc.threshold(pasteGray, pasteGray, 0, 255, Imgproc.THRESH_BINARY_INV);
                 Core.bitwise_and(mRgba, mRgba, frame, pasteGray);
                 Core.add(frame, paste, frame);
+                paste = new Mat();
                 lock.unlock();
                 return frame;
             } else if (pasteBuffer.empty() != true) {
