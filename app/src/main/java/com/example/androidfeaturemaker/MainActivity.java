@@ -458,7 +458,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 //從socket獲得輸出流outputStream
                                 time1 = System.currentTimeMillis();
                                 outputStream = socket.getOutputStream();
-                                //寫入數據到輸出流
+                                //寫入數據到輸出流，st為參數字串
                                 outputStream.write((st).getBytes("utf-8"));
                                 //發送
                                 outputStream.flush();
@@ -468,8 +468,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 /*接收檔案--------------------------------------------------------*/
                                 inputStream = socket.getInputStream();
                                 datasize = 0;
-                                //while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
-                                datasize = inputStream.available();
+                                while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
+                                //datasize = inputStream.available();
                                 Log.i("接收大小", "" + datasize);
                                 data = new byte[datasize];
                                 time4 = System.currentTimeMillis();
@@ -510,18 +510,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     Message msg = Message.obtain();
                                     mMainHandler.sendMessage(msg);
                                     /*------------------------------------------------------------*/
-                                }else if(datasize==0){
                                 }else{
                                     inputStream.read();
                                 }
                                 time2 = System.currentTimeMillis();
-                                Log.i("1.doSomething()花了：", "" + (time2-time1)+"size" + datasize);
-                                Log.i("2.doSomething()花了：", "" + (time3-time1)+"size" + datasize);
-                                Log.i("3.doSomething()花了：", "" + (time4-time3)+"size" + datasize);
-                                Log.i("4.doSomething()花了：", "" + (time2-time4)+"size" + datasize);
+                                //Log.i("720*480 發送到接收花了：", "" + (time2-time1) + "毫秒");
+                                //Log.i("2.doSomething()花了：", "" + (time3-time1)+"size" + datasize);
+                                //Log.i("3.doSomething()花了：", "" + (time4-time3)+"size" + datasize);
+                                //Log.i("4.doSomething()花了：", "" + (time2-time4)+"size" + datasize);
                                 try {
-                                    Thread.sleep(100);
-
+                                    Thread.sleep(80);
                                 } catch (InterruptedException ex) {
                                     Thread.currentThread().interrupt();
                                 }
@@ -745,7 +743,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 Imgproc.threshold(pasteGray, pasteGray, 0, 255, Imgproc.THRESH_BINARY_INV);
                 Core.bitwise_and(mRgba, mRgba, frame, pasteGray);
                 Core.add(frame, paste, frame);
-                paste = new Mat();
+                //paste = new Mat();
                 lock.unlock();
                 return frame;
             } else if (pasteBuffer.empty() != true) {
