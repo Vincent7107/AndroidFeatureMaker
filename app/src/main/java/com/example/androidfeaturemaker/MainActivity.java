@@ -464,27 +464,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 //重置move
                                 move = -1;
                                 /*接收檔案--------------------------------------------------------*/
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            try {
-                                Thread.sleep(20);
-                            } catch (InterruptedException ex) {
-                                Thread.currentThread().interrupt();
-                            }
-                        }
-                    }
-                });
-
-                receiveData = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        while (checkConnect) {
-                            try{
                                 inputStream = socket.getInputStream();
                                 datasize = 0;
                                 while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
-                                //datasize = inputStream.available();
                                 Log.i("接收大小", "" + datasize);
                                 data = new byte[datasize];
                                 if (datasize > 1451) {
@@ -527,13 +509,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 }else{
                                     inputStream.read();
                                 }
-                                try {
-                                    Thread.sleep(40);
-                                } catch (InterruptedException ex) {
-                                    Thread.currentThread().interrupt();
-                                }
-                            }catch (IOException e) {
+                            } catch (IOException e) {
                                 e.printStackTrace();
+                            }
+                            try {
+                                Thread.sleep(80);
+                            } catch (InterruptedException ex) {
+                                Thread.currentThread().interrupt();
                             }
                         }
                     }
@@ -544,7 +526,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 try {
                     connectServer.join();
                     transmission.start();
-                    receiveData.start();
+                    //receiveData.start();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -747,6 +729,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             if (paste.rows() == mRgba.rows() && paste.cols() == mRgba.cols()) {
                 lock.lock();
                 //Imgproc.resize(paste,paste,new Size(paste.cols()*2,paste.rows()*2));
+                //paste.copyTo(paste1);
                 paste.copyTo(pasteBuffer);
                 Log.i("paste", paste.toString());
                 //轉灰階
