@@ -117,16 +117,15 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     InputStream inputStream;
     Thread connectServer;
     Thread transmission;
+    Thread receiveData;
     private Socket socket;
     OutputStream outputStream;
     boolean checkConnect = false;
-    boolean beginG = false;
     int datasize;
     //byte[][] data = new byte[2][];
     byte[] data;
-    //紀錄登入序號
-    int playerList = -1;
     //紀錄玩家資訊
+    int playerList = -1;
     boolean ready = false;
     int move = -1;
     String st;
@@ -464,15 +463,30 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 outputStream.flush();
                                 //重置move
                                 move = -1;
-                                time3 = System.currentTimeMillis();
                                 /*接收檔案--------------------------------------------------------*/
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            try {
+                                Thread.sleep(20);
+                            } catch (InterruptedException ex) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }
+                    }
+                });
+
+                receiveData = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        while (checkConnect) {
+                            try{
                                 inputStream = socket.getInputStream();
                                 datasize = 0;
                                 while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
                                 //datasize = inputStream.available();
                                 Log.i("接收大小", "" + datasize);
                                 data = new byte[datasize];
-                                time4 = System.currentTimeMillis();
                                 if (datasize > 1451) {
                                     //buffer = java.lang.Math.abs(buffer - 1);
                                     //data[buffer] = new byte[datasize];
@@ -513,27 +527,24 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 }else{
                                     inputStream.read();
                                 }
-                                time2 = System.currentTimeMillis();
-                                //Log.i("720*480 發送到接收花了：", "" + (time2-time1) + "毫秒");
-                                //Log.i("2.doSomething()花了：", "" + (time3-time1)+"size" + datasize);
-                                //Log.i("3.doSomething()花了：", "" + (time4-time3)+"size" + datasize);
-                                //Log.i("4.doSomething()花了：", "" + (time2-time4)+"size" + datasize);
                                 try {
-                                    Thread.sleep(80);
+                                    Thread.sleep(40);
                                 } catch (InterruptedException ex) {
                                     Thread.currentThread().interrupt();
                                 }
-                            } catch (IOException e) {
+                            }catch (IOException e) {
                                 e.printStackTrace();
                             }
                         }
                     }
                 });
+
                 //start thread
                 connectServer.start();
                 try {
                     connectServer.join();
                     transmission.start();
+                    receiveData.start();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -732,6 +743,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             Log.i("lightflowTracking", decimalFormat.format(Position.x) + " " + decimalFormat.format(Position.y) + " "
                     + decimalFormat.format(Position.z));
             Mat frame = new Mat();
+
             if (paste.rows() == mRgba.rows() && paste.cols() == mRgba.cols()) {
                 lock.lock();
                 //Imgproc.resize(paste,paste,new Size(paste.cols()*2,paste.rows()*2));
@@ -759,6 +771,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     Log.i("BitmapE", "" + e);
                 }
             }
+
         }
         /*nextPtr.copyTo(estimateScenePoint);
         mGray.copyTo(lightFrame);*/
