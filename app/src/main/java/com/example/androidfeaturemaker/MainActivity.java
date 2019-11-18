@@ -72,6 +72,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -122,8 +123,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     OutputStream outputStream;
     boolean checkConnect = false;
     int datasize;
+    int pictureSize;
     //byte[][] data = new byte[2][];
     byte[] data;
+    byte[] data1;
     //紀錄玩家資訊
     int playerList = -1;
     boolean ready = false;
@@ -435,11 +438,11 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                             outputStream = socket.getOutputStream();
                             outputStream.write((st).getBytes("utf-8"));
                             outputStream.flush();
-
+                            inputStream = socket.getInputStream();
                             // record player's list
                             InputStream in = socket.getInputStream();
                             playerList = in.read();
-                            Log.i("playerlist", "playerlist : "+playerList);
+                            Log.i("playerlist:", ""+playerList);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -464,18 +467,30 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 //重置move
                                 move = -1;
                                 /*接收檔案--------------------------------------------------------*/
-                                inputStream = socket.getInputStream();
+                                try {
+                                    Thread.sleep(100);
+                                } catch (InterruptedException ex) {
+                                    Thread.currentThread().interrupt();
+                                }
+
                                 datasize = 0;
                                 while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
-                                Log.i("接收大小", "" + datasize);
-                                data = new byte[datasize];
-                                if (datasize > 1451) {
-                                    //buffer = java.lang.Math.abs(buffer - 1);
-                                    //data[buffer] = new byte[datasize];
+                                Log.i("datasize", "" + datasize);
+                                int len = 0;
+                                data1 = new byte[4];
+                                inputStream.read(data1, 0, 4);
+                                pictureSize = (int)((int)(0xff & data1[0]) << 32 | (int)(0xff & data1[1]) << 40 | (int)(0xff & data1[2]) << 48 | (int)(0xff & data1[3]) << 56);
+                                if(pictureSize<0 || pictureSize>100000){//圖片大小突然出現怪數字，出現就把剩下的接收完，然後甚麼也不做
+                                    while(len<datasize-4){
+                                        data = new byte[datasize-4];
+                                        len += inputStream.read(data, 0, datasize-4-len);
+                                    }
+                                    Log.i("pictureSize", "" + pictureSize);
+                                }else if(pictureSize > 1000) {
                                     /*將緩衝區read到data------------------------------------------*/
-                                    int len = 0;
-                                    while(len<datasize){//保證讀取接收到的量
-                                        len += inputStream.read(data, len, datasize-len);
+                                    data = new byte[pictureSize];
+                                    while(len<pictureSize){//保證讀取接收到的量
+                                        len += inputStream.read(data, 0, pictureSize-len);
                                     }
                                     //inputStream.read(data[buffer], 0, datasize);
                                     /*將data轉為所需型態------------------------------------------*/
@@ -490,33 +505,24 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     }
                                     lock.unlock();
 
-                                }else if(datasize == 5){
-                                    /*接收場上訊息------------------------------------------------*/
+                                }else if(pictureSize == 5){//pictureSize==代表是訊息
+                                    //接收場上訊息--------------------------------------------------
                                     final int bufferSize = 1024;
                                     final char[] buffer = new char[bufferSize];
                                     final StringBuilder out = new StringBuilder();
                                     Reader in = new InputStreamReader(inputStream, "UTF-8");
                                     int rsz = in.read(buffer, 0, buffer.length);
-                                    /*if (rsz < 0)
-                                        break;*/
                                     out.append(buffer, 0, rsz);
                                     st1 = out.toString();
                                     Log.i("st1",""+st1 + "total:" + datasize);
                                     //setStatus(st1);
-                                    Message msg = Message.obtain();
-                                    mMainHandler.sendMessage(msg);
-                                    /*------------------------------------------------------------*/
                                 }else{
                                     inputStream.read();
                                 }
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-                            try {
-                                Thread.sleep(80);
-                            } catch (InterruptedException ex) {
-                                Thread.currentThread().interrupt();
-                            }
+
                         }
                     }
                 });
@@ -725,35 +731,39 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             Log.i("lightflowTracking", decimalFormat.format(Position.x) + " " + decimalFormat.format(Position.y) + " "
                     + decimalFormat.format(Position.z));
             Mat frame = new Mat();
+            lock.lock();
+            try {
+                if (paste.rows() == mRgba.rows() && paste.cols() == mRgba.cols()) {
 
-            if (paste.rows() == mRgba.rows() && paste.cols() == mRgba.cols()) {
-                lock.lock();
-                //Imgproc.resize(paste,paste,new Size(paste.cols()*2,paste.rows()*2));
-                //paste.copyTo(paste1);
-                paste.copyTo(pasteBuffer);
-                Log.i("paste", paste.toString());
-                //轉灰階
-                Imgproc.cvtColor(paste, pasteGray, COLOR_BGR2GRAY);
-                //大于阈值部分被置为0，小于部分被置为255 取得mask
-                Imgproc.threshold(pasteGray, pasteGray, 0, 255, Imgproc.THRESH_BINARY_INV);
-                Core.bitwise_and(mRgba, mRgba, frame, pasteGray);
-                Core.add(frame, paste, frame);
-                //paste = new Mat();
-                lock.unlock();
-                return frame;
-            } else if (pasteBuffer.empty() != true) {
-                //轉灰階
-                try {
-                    Imgproc.cvtColor(pasteBuffer, pasteGray, COLOR_BGR2GRAY);
+
+                    //Imgproc.resize(paste,paste,new Size(paste.cols()*2,paste.rows()*2));
+                    paste.copyTo(pasteBuffer);
+                    Log.i("paste", paste.toString());
+                    //轉灰階
+                    Imgproc.cvtColor(paste, pasteGray, COLOR_BGR2GRAY);
                     //大于阈值部分被置为0，小于部分被置为255 取得mask
                     Imgproc.threshold(pasteGray, pasteGray, 0, 255, Imgproc.THRESH_BINARY_INV);
                     Core.bitwise_and(mRgba, mRgba, frame, pasteGray);
-                    Core.add(frame, pasteBuffer, frame);
+                    Core.add(frame, paste, frame);
+                    //paste = new Mat();
+
+
                     return frame;
-                } catch (IllegalArgumentException e) {
-                    Log.i("BitmapE", "" + e);
+                } else if (pasteBuffer.empty() != true) {
+                    //轉灰階
+                    try {
+                        Imgproc.cvtColor(pasteBuffer, pasteGray, COLOR_BGR2GRAY);
+                        //大于阈值部分被置为0，小于部分被置为255 取得mask
+                        Imgproc.threshold(pasteGray, pasteGray, 0, 255, Imgproc.THRESH_BINARY_INV);
+                        Core.bitwise_and(mRgba, mRgba, frame, pasteGray);
+                        Core.add(frame, pasteBuffer, frame);
+                        return frame;
+                    } catch (IllegalArgumentException e) {
+                        Log.i("BitmapE", "" + e);
+                    }
                 }
-            }
+            }finally
+            {lock.unlock();}
 
         }
         /*nextPtr.copyTo(estimateScenePoint);
