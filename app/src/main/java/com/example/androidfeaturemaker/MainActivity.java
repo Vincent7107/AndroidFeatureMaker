@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     boolean ready = false;
     int move = -1;
     String st;
-    String st1 = "45220";
+    String st1 = "45222";
     //test
     private Button btnSend;
     private Button btnReady;
@@ -142,6 +142,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private TextView txvsize;
     private TextView txvalive;
     private TextView txvresult;
+    private Button buttonUp;
+    private Button buttonDown;
+    private Button buttonRight;
+    private Button buttonLeft;
     ImageView imgView;
     private Handler mMainHandler;
     Bitmap bmp;
@@ -189,6 +193,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     //是否偵測到maker
     Boolean DETECTTOMAKER = FALSE;
 
+    //int average=0,count=0;
+
 
     BaseLoaderCallback baseLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -227,7 +233,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         txvspeed = (TextView) findViewById(R.id.speed);
         txvsize = (TextView) findViewById(R.id.size);
         txvalive = (TextView) findViewById(R.id.IsAlive);
-        txvresult = (TextView) findViewById(R.id.IsWin);
+        buttonUp = (Button) findViewById(R.id.ButtonUp);
+        buttonDown = (Button) findViewById(R.id.ButtonDown);
+        buttonLeft = (Button) findViewById(R.id.ButtonLeft);
+        buttonRight = (Button) findViewById(R.id.ButtonRight);
         /*Button calibration = (Button) findViewById(R.id.Calibration);
         calibration.setOnClickListener(new Button.OnClickListener() {
             @Override
@@ -328,6 +337,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                         DETECTTOMAKER = FALSE;
                         continue;
                     }
+
+                    /*
+                    if(count>20&&count<=40) {
+                        average += good_matches.size();
+                        Log.i("number", " " + good_matches.size());
+                    }
+                    if(count>40)
+                        Log.i("average", " " + average/20 );
+                    count++;*/
+
                     gm.fromList(good_matches);
                     List<KeyPoint> keypoints_objectList = keyPoint_train.toList();
                     List<KeyPoint> keypoints_sceneList = keyPoint_test.toList();
@@ -420,6 +439,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                btnReady.setVisibility(View.VISIBLE);
+                btnClose.setVisibility(View.VISIBLE);
                 connectServer = new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -468,11 +489,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 move = -1;
                                 /*接收檔案--------------------------------------------------------*/
                                 try {
-                                    Thread.sleep(100);
+                                    Thread.sleep(60);
                                 } catch (InterruptedException ex) {
                                     Thread.currentThread().interrupt();
                                 }
-
                                 datasize = 0;
                                 while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
                                 Log.i("datasize", "" + datasize);
@@ -486,6 +506,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                         len += inputStream.read(data, 0, datasize-4-len);
                                     }
                                     Log.i("pictureSize", "" + pictureSize);
+                                    continue;
                                 }else if(pictureSize > 1000) {
                                     /*將緩衝區read到data------------------------------------------*/
                                     data = new byte[pictureSize];
@@ -494,8 +515,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     }
                                     //inputStream.read(data[buffer], 0, datasize);
                                     /*將data轉為所需型態------------------------------------------*/
-                                    lock.lock();
                                     bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+                                    lock.lock();
                                     paste = Imgcodecs.imdecode(new MatOfByte(data), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
                                     Message msg = Message.obtain();
                                     mMainHandler.sendMessage(msg);
@@ -519,6 +540,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                 }else{
                                     inputStream.read();
                                 }
+                                try {
+                                    Thread.sleep(40);
+                                } catch (InterruptedException ex) {
+                                    Thread.currentThread().interrupt();
+                                }
+
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -532,7 +559,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 try {
                     connectServer.join();
                     transmission.start();
-                    //receiveData.start();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -604,7 +630,30 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             }
         });
 
-
+        buttonUp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                move = 0;
+            }
+        });
+        buttonDown.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                move = 1;
+            }
+        });
+        buttonRight.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                move = 2;
+            }
+        });
+        buttonLeft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                move = 3;
+            }
+        });
         /*-------------------------------------------------------------------------------------------*/
         //threadpool 1.降低資源消耗 重複利用已建立線程 2.高度線程管理
         mThreadPool = Executors.newCachedThreadPool();
@@ -640,6 +689,20 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                         break;
                     default:
                         txvalive.setText("未開始");
+                }
+                switch(c[4]){
+                    case '0':
+                        btnReady.setVisibility(View.GONE);
+                        break;
+                    case '1':
+                        ready = false;
+                        c[4]=2;
+                        btnReady.setText("準備");
+                        btnReady.setVisibility(View.VISIBLE);
+                        break;
+                    case '2':break;
+                    default:
+
                 }
                 /*switch (msg.what) {
                     case 0:
@@ -731,32 +794,36 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             Log.i("lightflowTracking", decimalFormat.format(Position.x) + " " + decimalFormat.format(Position.y) + " "
                     + decimalFormat.format(Position.z));
             Mat frame = new Mat();
+            Mat removeBackground=new Mat();
+            Mat mask=new Mat();
             lock.lock();
             try {
                 if (paste.rows() == mRgba.rows() && paste.cols() == mRgba.cols()) {
-
-
-                    //Imgproc.resize(paste,paste,new Size(paste.cols()*2,paste.rows()*2));
+                    //Imgproc.resize(paste,past.e,new Size(paste.cols()*2,pasterows()*2));
                     paste.copyTo(pasteBuffer);
-                    Log.i("paste", paste.toString());
+                    //Log.i("pixel", ""+paste.get(0,0)[0]+" "+paste.get(0,0)[1]+" "+paste.get(0,0)[2]);
+                    //Log.i("paste", paste.toString());
                     //轉灰階
                     Imgproc.cvtColor(paste, pasteGray, COLOR_BGR2GRAY);
                     //大于阈值部分被置为0，小于部分被置为255 取得mask
-                    Imgproc.threshold(pasteGray, pasteGray, 0, 255, Imgproc.THRESH_BINARY_INV);
+                    Imgproc.threshold(pasteGray, mask, 230, 255, Imgproc.THRESH_BINARY_INV);
+                    //超過閾值的像素設為maxvalue，小於閾值的設為0
+                    Imgproc.threshold(pasteGray, pasteGray, 230, 255, Imgproc.THRESH_BINARY);
+                    Core.bitwise_and(paste, paste, removeBackground, mask);
                     Core.bitwise_and(mRgba, mRgba, frame, pasteGray);
-                    Core.add(frame, paste, frame);
-                    //paste = new Mat();
-
-
+                    Core.add(frame, removeBackground, frame);
                     return frame;
                 } else if (pasteBuffer.empty() != true) {
                     //轉灰階
                     try {
                         Imgproc.cvtColor(pasteBuffer, pasteGray, COLOR_BGR2GRAY);
                         //大于阈值部分被置为0，小于部分被置为255 取得mask
-                        Imgproc.threshold(pasteGray, pasteGray, 0, 255, Imgproc.THRESH_BINARY_INV);
+                        Imgproc.threshold(pasteGray, mask, 230, 255, Imgproc.THRESH_BINARY_INV);
+                        //超過閾值的像素設為maxvalue，小於閾值的設為0
+                        Imgproc.threshold(pasteGray, pasteGray, 230, 255, Imgproc.THRESH_BINARY);
+                        Core.bitwise_and(pasteBuffer, pasteBuffer, removeBackground, mask);
                         Core.bitwise_and(mRgba, mRgba, frame, pasteGray);
-                        Core.add(frame, pasteBuffer, frame);
+                        Core.add(frame, removeBackground, frame);
                         return frame;
                     } catch (IllegalArgumentException e) {
                         Log.i("BitmapE", "" + e);
