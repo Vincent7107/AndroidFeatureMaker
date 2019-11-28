@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.ColorSpace;
 import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
@@ -25,6 +26,8 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.FpsMeter;
@@ -118,7 +121,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     InputStream inputStream;
     Thread connectServer;
     Thread transmission;
-    Thread receiveData;
     private Socket socket;
     OutputStream outputStream;
     boolean checkConnect = false;
@@ -141,12 +143,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private TextView txvspeed;
     private TextView txvsize;
     private TextView txvalive;
-    private TextView txvresult;
+    private TextView txmessage;
     private Button buttonUp;
     private Button buttonDown;
     private Button buttonRight;
     private Button buttonLeft;
-    ImageView imgView;
+    //ImageView imgView;
     private Handler mMainHandler;
     Bitmap bmp;
     Bitmap bmp32;
@@ -228,11 +230,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         btnSend = (Button) findViewById(R.id.Begin);
         btnReady = (Button) findViewById(R.id.Ready);
         btnClose = (Button) findViewById(R.id.close);
-        imgView = (ImageView)findViewById(R.id.image);
+        //imgView = (ImageView)findViewById(R.id.image);
         txvcolor = (TextView) findViewById(R.id.color);
         txvspeed = (TextView) findViewById(R.id.speed);
         txvsize = (TextView) findViewById(R.id.size);
         txvalive = (TextView) findViewById(R.id.IsAlive);
+        txmessage = (TextView) findViewById(R.id.stateMessage);
         buttonUp = (Button) findViewById(R.id.ButtonUp);
         buttonDown = (Button) findViewById(R.id.ButtonDown);
         buttonLeft = (Button) findViewById(R.id.ButtonLeft);
@@ -415,6 +418,25 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     outputStream.close();
                     inputStream.close();
                     socket.close();
+                    /*--------------*/
+                    txmessage.setText("請掃描標記後再按連線!");
+                    btnSend.setVisibility(View.VISIBLE);
+                    btnReady.setVisibility(View.GONE);
+                    btnClose.setVisibility(View.GONE);
+                    buttonUp.setVisibility(View.GONE);
+                    buttonDown.setVisibility(View.GONE);
+                    buttonRight.setVisibility(View.GONE);
+                    buttonLeft.setVisibility(View.GONE);
+                    txvcolor.setVisibility(View.GONE);
+                    txvsize.setVisibility(View.GONE);
+                    txvspeed.setVisibility(View.GONE);
+                    txvalive.setVisibility(View.GONE);
+                    /*--------------*/
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                    }
                 }catch(IOException e){
                 }
             }
@@ -425,22 +447,12 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             public void onClick(View v) {
                 btnReady.setText(ready==false?"取消準備":"準備");
                 ready = !ready;
-                /*if(ready==0){
-                    btnReady.setText("取消準備");
-                    ready = 1;
-                }
-                else {
-                    btnReady.setText("準備");
-                    ready = 0;
-                }*/
             }
         });
 
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                btnReady.setVisibility(View.VISIBLE);
-                btnClose.setVisibility(View.VISIBLE);
                 connectServer = new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -465,6 +477,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                             playerList = in.read();
                             Log.i("playerlist:", ""+playerList);
                         } catch (IOException e) {
+                            Log.i("checkNet","5555555555555555");
                             e.printStackTrace();
                         }
                     }
@@ -472,82 +485,31 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 transmission =  new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        long time1, time2, time3, time4, time5;
                         while (checkConnect) {
                             //將資訊串接成string傳送
-                            st = decimalFormat.format(UnityPosition.x / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5) + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5) + " " + decimalFormat.format(Rvec.get(0, 0)[0]) + " " + decimalFormat.format(Rvec.get(1, 0)[0]) + " " + decimalFormat.format(Rvec.get(2, 0)[0]) + " " + playerList + " " + move + " " + ready + " ";
+                            st = decimalFormat.format(UnityPosition.x / 10 * 6.5)
+                                                       + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5)
+                                                       + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5)
+                                                       + " " + decimalFormat.format(Rvec.get(0, 0)[0])
+                                                       + " " + decimalFormat.format(Rvec.get(1, 0)[0])
+                                                       + " " + decimalFormat.format(Rvec.get(2, 0)[0])
+                                                       + " " + playerList
+                                                       + " " + move
+                                                       + " " + ready
+                                                       + " ";
+                            /*將字串寫入輸出流------------------------------------------------*/
+                            sendData();
                             try {
-                                /*將字串寫入輸出流------------------------------------------------*/
-                                //從socket獲得輸出流outputStream
-                                time1 = System.currentTimeMillis();
-                                outputStream = socket.getOutputStream();
-                                //寫入數據到輸出流，st為參數字串
-                                outputStream.write((st).getBytes("utf-8"));
-                                //發送
-                                outputStream.flush();
-                                //重置move
-                                move = -1;
-                                /*接收檔案--------------------------------------------------------*/
-                                try {
-                                    Thread.sleep(60);
-                                } catch (InterruptedException ex) {
-                                    Thread.currentThread().interrupt();
-                                }
-                                datasize = 0;
-                                while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
-                                Log.i("datasize", "" + datasize);
-                                int len = 0;
-                                data1 = new byte[4];
-                                inputStream.read(data1, 0, 4);
-                                pictureSize = (int)((int)(0xff & data1[0]) << 32 | (int)(0xff & data1[1]) << 40 | (int)(0xff & data1[2]) << 48 | (int)(0xff & data1[3]) << 56);
-                                if(pictureSize<0 || pictureSize>100000){//圖片大小突然出現怪數字，出現就把剩下的接收完，然後甚麼也不做
-                                    while(len<datasize-4){
-                                        data = new byte[datasize-4];
-                                        len += inputStream.read(data, 0, datasize-4-len);
-                                    }
-                                    Log.i("pictureSize", "" + pictureSize);
-                                    continue;
-                                }else if(pictureSize > 1000) {
-                                    /*將緩衝區read到data------------------------------------------*/
-                                    data = new byte[pictureSize];
-                                    while(len<pictureSize){//保證讀取接收到的量
-                                        len += inputStream.read(data, 0, pictureSize-len);
-                                    }
-                                    //inputStream.read(data[buffer], 0, datasize);
-                                    /*將data轉為所需型態------------------------------------------*/
-                                    bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
-                                    lock.lock();
-                                    paste = Imgcodecs.imdecode(new MatOfByte(data), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
-                                    Message msg = Message.obtain();
-                                    mMainHandler.sendMessage(msg);
-                                    Log.i("resolution", paste.toString());
-                                    if (paste.empty() != true) {
-                                        Imgproc.cvtColor(paste, paste, COLOR_RGB2BGRA);
-                                    }
-                                    lock.unlock();
-
-                                }else if(pictureSize == 5){//pictureSize==代表是訊息
-                                    //接收場上訊息--------------------------------------------------
-                                    final int bufferSize = 1024;
-                                    final char[] buffer = new char[bufferSize];
-                                    final StringBuilder out = new StringBuilder();
-                                    Reader in = new InputStreamReader(inputStream, "UTF-8");
-                                    int rsz = in.read(buffer, 0, buffer.length);
-                                    out.append(buffer, 0, rsz);
-                                    st1 = out.toString();
-                                    Log.i("st1",""+st1 + "total:" + datasize);
-                                    //setStatus(st1);
-                                }else{
-                                    inputStream.read();
-                                }
-                                try {
-                                    Thread.sleep(40);
-                                } catch (InterruptedException ex) {
-                                    Thread.currentThread().interrupt();
-                                }
-
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                                Thread.sleep(60);
+                            } catch (InterruptedException ex) {
+                                Thread.currentThread().interrupt();
+                            }
+                            /*接收檔案--------------------------------------------------------*/
+                            if(!receiveData()) continue;
+                            try {
+                                Thread.sleep(40);
+                            } catch (InterruptedException ex) {
+                                Thread.currentThread().interrupt();
                             }
 
                         }
@@ -558,38 +520,54 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 connectServer.start();
                 try {
                     connectServer.join();
+                    txmessage.setText("已經連接上伺服器");
+                    btnReady.setVisibility(View.VISIBLE);
+                    btnClose.setVisibility(View.VISIBLE);
+                    btnSend.setVisibility(View.GONE);
                     transmission.start();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                /*connectServer.start();
+                try {
+                    connectServer.join(100);
+                    if(socket==null){
+                        Log.i("checkNet","未連接");
+                        Toast.makeText(MainActivity.this, "未連接上伺服器，請再次檢查你的網路!", Toast.LENGTH_SHORT).show();
+                    }else{
+                        Log.i("checkNet",""+socket.isClosed());
+                        btnReady.setVisibility(View.VISIBLE);
+                        btnClose.setVisibility(View.VISIBLE);
+                        btnSend.setVisibility(View.GONE);
+                        transmission.start();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }*/
             }
         });
 
-        mGesture = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+        /*mGesture = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onSingleTapUp(MotionEvent e) {
                 // TODO Auto-generated method stub
                 return false;
             }
-
             @Override
             public void onShowPress(MotionEvent e) {
                 // TODO Auto-generated method stub
 
             }
-
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
                 // TODO Auto-generated method stub
                 return false;
             }
-
             @Override
             public void onLongPress(MotionEvent e) {
                 // TODO Auto-generated method stub
 
             }
-
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
                 if (e1.getX() - e2.getX() > FLIP_DISTANCE) {
@@ -622,13 +600,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 }
                 return false;
             }
-
             @Override
             public boolean onDown(MotionEvent e) {
                 // TODO Auto-generated method stub
                 return false;
             }
-        });
+        });*/
+        /*@Override
+        public boolean onTouchEvent(MotionEvent event) {
+            return mGesture.onTouchEvent(event);
+        }*/
 
         buttonUp.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -660,26 +641,30 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         mMainHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                imgView.setImageBitmap(bmp);
+                //imgView.setImageBitmap(bmp);
                 char[] c  = st1.toCharArray();
                 switch(c[0]){
                     case '0':
                         txvcolor.setText("紅色");
+                        txvcolor.setTextColor(Color.RED);
                         break;
                     case '1':
                         txvcolor.setText("黃色");
+                        txvcolor.setTextColor(Color.YELLOW);
                         break;
                     case '2':
                         txvcolor.setText("藍色");
+                        txvcolor.setTextColor(Color.BLUE);
                         break;
                     case '3':
                         txvcolor.setText("綠色");
+                        txvcolor.setTextColor(Color.GREEN);
                         break;
                     default:
                         txvcolor.setText("顏色");
                 }
                 txvspeed.setText("速度"+c[1]);
-                txvsize.setText("大小:"+c[2]);
+                txvsize.setText("大小"+c[2]);
                 switch(c[3]){
                     case '0':
                         txvalive.setText("落敗");
@@ -693,14 +678,33 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 switch(c[4]){
                     case '0':
                         btnReady.setVisibility(View.GONE);
+                        buttonUp.setVisibility(View.VISIBLE);
+                        buttonDown.setVisibility(View.VISIBLE);
+                        buttonRight.setVisibility(View.VISIBLE);
+                        buttonLeft.setVisibility(View.VISIBLE);
+                        txvcolor.setVisibility(View.VISIBLE);
+                        txvsize.setVisibility(View.VISIBLE);
+                        txvspeed.setVisibility(View.VISIBLE);
+                        txvalive.setVisibility(View.VISIBLE);
+                        txmessage.setText("遊戲開始!!");
                         break;
                     case '1':
                         ready = false;
                         c[4]=2;
                         btnReady.setText("準備");
+                        txmessage.setText("已經連接上伺服器，請按下準備");
                         btnReady.setVisibility(View.VISIBLE);
+                        buttonUp.setVisibility(View.GONE);
+                        buttonDown.setVisibility(View.GONE);
+                        buttonRight.setVisibility(View.GONE);
+                        buttonLeft.setVisibility(View.GONE);
+                        txvcolor.setVisibility(View.GONE);
+                        txvsize.setVisibility(View.GONE);
+                        txvspeed.setVisibility(View.GONE);
+                        txvalive.setVisibility(View.GONE);
                         break;
-                    case '2':break;
+                    case '2':
+                        break;
                     default:
 
                 }
@@ -713,9 +717,74 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         };
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return mGesture.onTouchEvent(event);
+    private void sendData(){
+        try{
+            //從socket獲得輸出流outputStream
+            outputStream = socket.getOutputStream();
+            //寫入數據到輸出流，st為參數字串
+            outputStream.write((st).getBytes("utf-8"));
+            //發送
+            outputStream.flush();
+            //重置move
+            move = -1;
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    private boolean receiveData(){
+        try{
+            datasize = 0;
+            while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
+            Log.i("datasize", "" + datasize);
+            int len = 0;
+            data1 = new byte[4];
+            inputStream.read(data1, 0, 4);
+            pictureSize = (int)((int)(0xff & data1[0]) << 32 | (int)(0xff & data1[1]) << 40 | (int)(0xff & data1[2]) << 48 | (int)(0xff & data1[3]) << 56);
+            if(pictureSize<0 || pictureSize>100000){//圖片大小突然出現怪數字，出現就把剩下的接收完，然後甚麼也不做
+                while(len<datasize-4){
+                    data = new byte[datasize-4];
+                    len += inputStream.read(data, 0, datasize-4-len);
+                }
+                Log.i("pictureSize", "" + pictureSize);
+                return false;
+            }else if(pictureSize > 1000) {
+                /*將緩衝區read到data------------------------------------------*/
+                data = new byte[pictureSize];
+                while(len<pictureSize){//保證讀取接收到的量
+                    len += inputStream.read(data, 0, pictureSize-len);
+                }
+                //inputStream.read(data[buffer], 0, datasize);
+                /*將data轉為所需型態------------------------------------------*/
+                //bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+                lock.lock();
+                paste = Imgcodecs.imdecode(new MatOfByte(data), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
+                Message msg = Message.obtain();
+                mMainHandler.sendMessage(msg);
+                Log.i("resolution", paste.toString());
+                if (paste.empty() != true) {
+                    Imgproc.cvtColor(paste, paste, COLOR_RGB2BGRA);
+                }
+                lock.unlock();
+
+            }else if(pictureSize == 5){//pictureSize==代表是訊息
+                //接收場上訊息--------------------------------------------------
+                final int bufferSize = 1024;
+                final char[] buffer = new char[bufferSize];
+                final StringBuilder out = new StringBuilder();
+                Reader in = new InputStreamReader(inputStream, "UTF-8");
+                int rsz = in.read(buffer, 0, buffer.length);
+                out.append(buffer, 0, rsz);
+                st1 = out.toString();
+                Log.i("st1",""+st1 + "total:" + datasize);
+                //setStatus(st1);
+            }else{
+                inputStream.read();
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return true;
     }
 
     @Override

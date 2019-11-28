@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -21,135 +22,137 @@
         android:id="@+id/Begin"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Begin"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"/>
+        android:text="連線"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"/>
 
     <Button
         android:id="@+id/close"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Close"
-        android:visibility="invisible"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:text="關閉連線"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/Ready"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="準備"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <ImageView
-        android:id="@+id/image"
-        android:layout_width="124dp"
-        android:layout_height="122dp"
+        android:visibility="gone"
         android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
+        android:layout_centerVertical="true"/>
+
+    <!--<ImageView
+        android:id="@+id/image"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:src="@drawable/ic_launcher_background"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/Begin"
-        tools:layout_editor_absoluteY="48dp"></ImageView>
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"></ImageView>-->
+
+    <TextView
+        android:id="@+id/stateMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="25dp"
+        android:text="請掃描標記後再按連線!"
+        android:background="#44888888"
+        android:textColor="@android:color/background_light"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"/>
 
     <TextView
         android:id="@+id/color"
-        android:layout_width="wrap_content"
+        android:layout_width="70dp"
         android:layout_height="wrap_content"
-        android:textSize="30dp"
+        android:textSize="25dp"
         android:text="顏色"
+        android:visibility="gone"
+        android:background="#44888888"
         android:textColor="@android:color/background_light"
-        app:layout_constraintTop_toBottomOf="@id/image"
-        app:layout_constraintLeft_toLeftOf="@id/image"
-        tools:layout_editor_absoluteY="122dp" />
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/stateMessage"/>
 
     <TextView
         android:id="@+id/speed"
-        android:layout_width="wrap_content"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="速度"
-        android:textSize="30dp"
+        android:textSize="25dp"
+        android:visibility="gone"
+        android:background="#44888888"
         android:textColor="@android:color/background_light"
-        app:layout_constraintTop_toBottomOf="@id/color"
-        app:layout_constraintLeft_toLeftOf="@id/image"
-        tools:layout_editor_absoluteY="122dp" />
+        android:layout_toRightOf="@+id/color"
+        android:layout_below="@id/stateMessage"/>
 
     <TextView
         android:id="@+id/size"
-        android:layout_width="wrap_content"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="大小"
-        android:textSize="30dp"
+        android:textSize="25dp"
+        android:visibility="gone"
+        android:background="#44888888"
         android:textColor="@android:color/background_light"
-        app:layout_constraintTop_toBottomOf="@id/speed"
-        app:layout_constraintLeft_toLeftOf="@id/image"
-        tools:layout_editor_absoluteY="122dp" />
+        android:layout_toRightOf="@+id/speed"
+        android:layout_below="@id/stateMessage" />
 
     <TextView
         android:id="@+id/IsAlive"
-        android:layout_width="wrap_content"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:text="狀態"
-        android:textSize="30dp"
+        android:textSize="25dp"
+        android:visibility="gone"
+        android:background="#44888888"
         android:textColor="@android:color/background_light"
-        app:layout_constraintTop_toBottomOf="@id/size"
-        app:layout_constraintLeft_toLeftOf="@id/image"
-        tools:layout_editor_absoluteY="122dp" />
-
-    <!--<TextView
-        android:id="@+id/IsWin"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="結果"
-        android:textSize="30dp"
-        android:textColor="@android:color/background_light"
-        app:layout_constraintTop_toBottomOf="@id/IsAlive"
-        app:layout_constraintLeft_toLeftOf="@id/image"
-        tools:layout_editor_absoluteY="122dp" />-->
+        android:layout_toRightOf="@+id/size"
+        android:layout_below="@id/stateMessage" />
 
     <Button
         android:id="@+id/ButtonUp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:visibility="gone"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
         android:layout_marginRight="70dp"
         android:layout_marginBottom="80dp"
-        android:background="@drawable/custom_button_up"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+        android:background="@drawable/custom_button_up" />
 
     <Button
         android:id="@+id/ButtonDown"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:visibility="gone"
         android:background="@drawable/custom_button_down"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintLeft_toLeftOf="@id/ButtonUp"
-        app:layout_constraintRight_toRightOf="parent" />
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginRight="70dp"
+        android:layout_marginBottom="0dp"/>
 
     <Button
         android:id="@+id/ButtonLeft"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="60dp"
-        android:layout_marginBottom="40dp"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:visibility="gone"
         android:background="@drawable/custom_button_left"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/ButtonUp" />
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginRight="140dp"
+        android:layout_marginBottom="40dp" />
 
     <Button
         android:id="@+id/ButtonRight"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="40dp"
-        android:layout_marginLeft="30dp"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:visibility="gone"
         android:background="@drawable/custom_button_right"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="@id/ButtonUp"
-        app:layout_constraintRight_toRightOf="parent" />
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginRight="0dp"
+        android:layout_marginBottom="40dp" />
 
-</android.support.constraint.ConstraintLayout>
+</RelativeLayout>
