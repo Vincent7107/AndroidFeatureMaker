@@ -488,15 +488,15 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                         while (checkConnect) {
                             //將資訊串接成string傳送
                             st = decimalFormat.format(UnityPosition.x / 10 * 6.5)
-                                                       + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5)
-                                                       + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5)
-                                                       + " " + decimalFormat.format(Rvec.get(0, 0)[0])
-                                                       + " " + decimalFormat.format(Rvec.get(1, 0)[0])
-                                                       + " " + decimalFormat.format(Rvec.get(2, 0)[0])
-                                                       + " " + playerList
-                                                       + " " + move
-                                                       + " " + ready
-                                                       + " ";
+                                    + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5)
+                                    + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5)
+                                    + " " + decimalFormat.format(Rvec.get(0, 0)[0])
+                                    + " " + decimalFormat.format(Rvec.get(1, 0)[0])
+                                    + " " + decimalFormat.format(Rvec.get(2, 0)[0])
+                                    + " " + playerList
+                                    + " " + move
+                                    + " " + ready
+                                    + " ";
                             /*將字串寫入輸出流------------------------------------------------*/
                             sendData();
                             try {
@@ -515,19 +515,20 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                         }
                     }
                 });
-
+                if(Rvec.rows()==0)Toast.makeText(MainActivity.this, "尚未掃描標記!", Toast.LENGTH_SHORT).show();
+                else{
                 //start thread
-                connectServer.start();
-                try {
-                    connectServer.join();
-                    txmessage.setText("已經連接上伺服器");
-                    btnReady.setVisibility(View.VISIBLE);
-                    btnClose.setVisibility(View.VISIBLE);
-                    btnSend.setVisibility(View.GONE);
-                    transmission.start();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                    connectServer.start();
+                    try {
+                        connectServer.join();
+                        txmessage.setText("已經連接上伺服器");
+                        btnReady.setVisibility(View.VISIBLE);
+                        btnClose.setVisibility(View.VISIBLE);
+                        btnSend.setVisibility(View.GONE);
+                        transmission.start();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 /*connectServer.start();
                 try {
                     connectServer.join(100);
@@ -544,6 +545,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }*/
+                }
             }
         });
 
@@ -556,7 +558,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void onShowPress(MotionEvent e) {
                 // TODO Auto-generated method stub
-
             }
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
@@ -566,7 +567,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             @Override
             public void onLongPress(MotionEvent e) {
                 // TODO Auto-generated method stub
-
             }
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
