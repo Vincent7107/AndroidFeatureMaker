@@ -12,6 +12,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.icu.util.TimeZone;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -74,6 +75,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -119,6 +121,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private ExecutorService mThreadPool;
     //網路串流
     InputStream inputStream;
+    Thread closeConnect;
     Thread connectServer;
     Thread transmission;
     private Socket socket;
@@ -132,6 +135,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     //紀錄玩家資訊
     int playerList = -1;
     boolean ready = false;
+    boolean sureConnect=false;
     int move = -1;
     String st;
     String st1 = "45222";
@@ -415,6 +419,29 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             public void onClick(View v) {
                 try {
                     checkConnect = false;
+                    closeConnect = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            playerList=-1;
+                            st = decimalFormat.format(UnityPosition.x / 10 * 6.5)
+                                    + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5)
+                                    + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5)
+                                    + " " + decimalFormat.format(Rvec.get(0, 0)[0])
+                                    + " " + decimalFormat.format(Rvec.get(1, 0)[0])
+                                    + " " + decimalFormat.format(Rvec.get(2, 0)[0])
+                                    + " " + playerList
+                                    + " " + move
+                                    + " " + ready
+                                    + " ";
+                            sendData();
+                        }
+                    });
+                    closeConnect.start();
+                    try{
+                        closeConnect.join();
+                    }catch (InterruptedException e){}
+
+                    //------------------------------------------------------------------------------
                     outputStream.close();
                     inputStream.close();
                     socket.close();
@@ -433,7 +460,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     txvalive.setVisibility(View.GONE);
                     /*--------------*/
                     try {
-                        Thread.sleep(500);
+                        Thread.sleep(300);
                     } catch (InterruptedException ex) {
                         Thread.currentThread().interrupt();
                     }
@@ -458,7 +485,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     public void run() {
                         try {
                             // 創建socket IP port
-                            socket = new Socket("140.121.197.164", 80);
+                            //socket = new Socket("140.121.197.164", 80);
+                            socket=new Socket();
+                            socket.connect(new InetSocketAddress("140.121.197.164", 80),200);
                             // 判斷是否連接成功
                             try {
                                 Thread.sleep(50);
@@ -476,8 +505,13 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                             InputStream in = socket.getInputStream();
                             playerList = in.read();
                             Log.i("playerlist:", ""+playerList);
+                            //----------------------------------------------------------------------
+                            sureConnect=true;
                         } catch (IOException e) {
-                            Log.i("checkNet","5555555555555555");
+                            Log.i("checkNet","未連接");
+                            Looper.prepare();
+                            Toast.makeText(MainActivity.this, "未連接上伺服器，請再次檢查網路!", Toast.LENGTH_SHORT).show();
+                            Looper.loop();
                             e.printStackTrace();
                         }
                     }
@@ -500,14 +534,14 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                             /*將字串寫入輸出流------------------------------------------------*/
                             sendData();
                             try {
-                                Thread.sleep(60);
+                                Thread.sleep(140);
                             } catch (InterruptedException ex) {
                                 Thread.currentThread().interrupt();
                             }
                             /*接收檔案--------------------------------------------------------*/
                             if(!receiveData()) continue;
                             try {
-                                Thread.sleep(40);
+                                Thread.sleep(20);
                             } catch (InterruptedException ex) {
                                 Thread.currentThread().interrupt();
                             }
@@ -520,31 +554,18 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 //start thread
                     connectServer.start();
                     try {
-                        connectServer.join();
-                        txmessage.setText("已經連接上伺服器");
-                        btnReady.setVisibility(View.VISIBLE);
-                        btnClose.setVisibility(View.VISIBLE);
-                        btnSend.setVisibility(View.GONE);
-                        transmission.start();
+                        Thread.sleep(200);//用join的話還不清楚為何卡死
+                        if(sureConnect){
+                            sureConnect=false;
+                            transmission.start();
+                            txmessage.setText("已經連接上伺服器");
+                            btnReady.setVisibility(View.VISIBLE);
+                            btnClose.setVisibility(View.VISIBLE);
+                            btnSend.setVisibility(View.GONE);
+                        }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                /*connectServer.start();
-                try {
-                    connectServer.join(100);
-                    if(socket==null){
-                        Log.i("checkNet","未連接");
-                        Toast.makeText(MainActivity.this, "未連接上伺服器，請再次檢查你的網路!", Toast.LENGTH_SHORT).show();
-                    }else{
-                        Log.i("checkNet",""+socket.isClosed());
-                        btnReady.setVisibility(View.VISIBLE);
-                        btnClose.setVisibility(View.VISIBLE);
-                        btnSend.setVisibility(View.GONE);
-                        transmission.start();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }*/
                 }
             }
         });
