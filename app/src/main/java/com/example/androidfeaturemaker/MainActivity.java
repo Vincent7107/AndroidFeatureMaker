@@ -137,6 +137,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     boolean ready = false;
     boolean sureConnect=false;
     int move = -1;
+    int IsConnect=0;
     String st;
     String st1 = "45222";
     //test
@@ -419,10 +420,10 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             public void onClick(View v) {
                 try {
                     checkConnect = false;
+                    IsConnect=0;
                     closeConnect = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            playerList=-1;
                             st = decimalFormat.format(UnityPosition.x / 10 * 6.5)
                                     + " " + decimalFormat.format(UnityPosition.y / 10 * 6.5)
                                     + " " + decimalFormat.format(UnityPosition.z / 10 * 6.5)
@@ -432,6 +433,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     + " " + playerList
                                     + " " + move
                                     + " " + ready
+                                    + " " + IsConnect
                                     + " ";
                             sendData();
                         }
@@ -487,16 +489,18 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                             // 創建socket IP port
                             //socket = new Socket("140.121.197.164", 80);
                             socket=new Socket();
-                            socket.connect(new InetSocketAddress("140.121.197.164", 80),200);
+                            socket.connect(new InetSocketAddress("140.121.197.164", 80),100);
                             // 判斷是否連接成功
                             try {
                                 Thread.sleep(50);
                             } catch (InterruptedException ex) {
                                 Thread.currentThread().interrupt();
                             }
+                            IsConnect=1;
+                            sureConnect=true;
                             checkConnect = true;
                             //傳送圖片解析度
-                            st = mRgba.cols() + " " + mRgba.rows();
+                            st = mRgba.cols() + " " + mRgba.rows()+ " " + IsConnect;
                             outputStream = socket.getOutputStream();
                             outputStream.write((st).getBytes("utf-8"));
                             outputStream.flush();
@@ -506,7 +510,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                             playerList = in.read();
                             Log.i("playerlist:", ""+playerList);
                             //----------------------------------------------------------------------
-                            sureConnect=true;
                         } catch (IOException e) {
                             Log.i("checkNet","未連接");
                             Looper.prepare();
@@ -530,16 +533,17 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                                     + " " + playerList
                                     + " " + move
                                     + " " + ready
+                                    + " " + IsConnect
                                     + " ";
                             /*將字串寫入輸出流------------------------------------------------*/
                             sendData();
                             try {
-                                Thread.sleep(140);
+                                Thread.sleep(80);
                             } catch (InterruptedException ex) {
                                 Thread.currentThread().interrupt();
                             }
                             /*接收檔案--------------------------------------------------------*/
-                            if(!receiveData()) continue;
+                            if(receiveData()) continue;
                             try {
                                 Thread.sleep(20);
                             } catch (InterruptedException ex) {
@@ -554,7 +558,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 //start thread
                     connectServer.start();
                     try {
-                        Thread.sleep(200);//用join的話還不清楚為何卡死
+                        Thread.sleep(300);//用join的話還不清楚為何卡死
                         if(sureConnect){
                             sureConnect=false;
                             transmission.start();
@@ -748,6 +752,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
             outputStream.flush();
             //重置move
             move = -1;
+            Log.i("pictureSize", "sendsomething");
         }catch (IOException e){
             e.printStackTrace();
         }
@@ -755,20 +760,22 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
     private boolean receiveData(){
         try{
+
             datasize = 0;
             while(datasize == 0) {datasize = inputStream.available();}//保證數據有收到
-            Log.i("datasize", "" + datasize);
+            //Log.i("datasize", "" + datasize);
             int len = 0;
             data1 = new byte[4];
             inputStream.read(data1, 0, 4);
             pictureSize = (int)((int)(0xff & data1[0]) << 32 | (int)(0xff & data1[1]) << 40 | (int)(0xff & data1[2]) << 48 | (int)(0xff & data1[3]) << 56);
+            Log.i("pictureSize", "" + pictureSize);
             if(pictureSize<0 || pictureSize>100000){//圖片大小突然出現怪數字，出現就把剩下的接收完，然後甚麼也不做
                 while(len<datasize-4){
                     data = new byte[datasize-4];
                     len += inputStream.read(data, 0, datasize-4-len);
                 }
-                Log.i("pictureSize", "" + pictureSize);
-                return false;
+                Log.i("pictureSize88", "" + pictureSize);
+                return true;
             }else if(pictureSize > 1000) {
                 /*將緩衝區read到data------------------------------------------*/
                 data = new byte[pictureSize];
@@ -779,15 +786,16 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 /*將data轉為所需型態------------------------------------------*/
                 //bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
                 lock.lock();
+                long time1 = System.currentTimeMillis();
                 paste = Imgcodecs.imdecode(new MatOfByte(data), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
-                Message msg = Message.obtain();
-                mMainHandler.sendMessage(msg);
+                long time2 = System.currentTimeMillis();
+                Log.i("pictureSizetime", "" + (time2-time1));
                 Log.i("resolution", paste.toString());
                 if (paste.empty() != true) {
                     Imgproc.cvtColor(paste, paste, COLOR_RGB2BGRA);
                 }
                 lock.unlock();
-
+                Log.i("pictureSize", "do something");
             }else if(pictureSize == 5){//pictureSize==代表是訊息
                 //接收場上訊息--------------------------------------------------
                 final int bufferSize = 1024;
@@ -798,6 +806,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 out.append(buffer, 0, rsz);
                 st1 = out.toString();
                 Log.i("st1",""+st1 + "total:" + datasize);
+                Message msg = Message.obtain();
+                mMainHandler.sendMessage(msg);
                 //setStatus(st1);
             }else{
                 inputStream.read();
@@ -805,7 +815,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         }catch (IOException e){
             e.printStackTrace();
         }
-        return true;
+        return false;
     }
 
     @Override
